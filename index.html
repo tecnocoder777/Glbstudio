@@ -1,998 +1,674 @@
-
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Model Maker</title>
+    <title>Mera Telegram Jaisa App</title>
     <style>
+        /* Basic Reset & Global Styles */
+        *, *::before, *::after { box-sizing: border-box; }
+        html { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
         body {
-            margin: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
+            min-height: 100vh; margin: 0;
+            background-color: #17212b; /* Dark background for app pages */
+            color: #fff;
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+        }
+
+        /* --- PAGE CONTAINERS --- */
+        .app-page {
+            display: none; 
             flex-direction: column;
-            height: 100vh;
-            background-color: #e9e9e9; /* Lighter background */
-            color: #333;
+            height: 100vh; 
+            width: 100%;
+            overflow: hidden; 
+        }
+        .app-page.active {
+            display: flex; 
         }
 
-        #toolbar {
+        /* --- AUTH SCREEN (MODIFIED) --- */
+        #auth-screen {
+            display: flex; 
+            flex-direction: column;
+            /* justify-content: center; */ /* Removed for stacked forms */
+            align-items: center; /* Center forms horizontally */
+            height: 100vh; 
+            background-color: #0088cc; /* Blue background */
+            color: white; 
+            padding: 20px;
+            overflow-y: auto; /* Allow scrolling if content overflows */
+        }
+        #auth-screen.hidden { display: none !important; }
+
+        .auth-header { /* Optional header for Auth Screen */
+            width: 100%;
+            text-align: center;
+            padding: 10px 0 0px 0; /* Adjusted padding */
+        }
+        .auth-header h1 {
+            margin: 0 0 20px 0; /* Space below header */
+            font-size: 1.8em; 
+            font-weight: 500;
+        }
+
+        #auth-screen #login-form,
+        #auth-screen #signup-form {
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            width: 100%;
+            max-width: 400px; 
+            padding: 0px 20px 20px 20px; /* No top padding, header has bottom margin */
+            margin-bottom: 10px; 
+        }
+        /* #signup-form has no .hidden class in HTML by default */
+
+        #auth-screen h2 {
+            margin-bottom: 20px;
+            font-weight: 500;
+            color: white;
+            text-align: center; /* Center form titles */
+        }
+        #auth-screen input {
+            width: 100%; 
             padding: 12px 15px;
-            background-color: #4A4A4A; /* Darker grey for toolbar */
-            color: white;
-            display: flex;
-            gap: 8px; /* Reduced gap between direct children (groups) */
-            align-items: center;
-            flex-wrap: wrap;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            border-bottom: 1px solid #333;
-        }
-
-        .toolbar-group {
-            display: flex;
-            align-items: center;
-            gap: 8px; /* Gap within a group */
-            padding: 0 10px;
-            border-right: 1px solid #666;
-        }
-        .toolbar-group:last-child {
-            border-right: none;
-            margin-left: auto; /* Push object name to the right */
-        }
-
-
-        #toolbar button,
-        #toolbar label.file-label,
-        #toolbar select {
-            padding: 8px 15px;
-            background-color: #606060; /* Button background */
-            color: white;
-            border: 1px solid #505050;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background-color 0.2s ease;
-        }
-
-        #toolbar button:hover,
-        #toolbar label.file-label:hover,
-        #toolbar select:hover {
-            background-color: #757575; /* Lighter on hover */
-        }
-        
-        #toolbar button:active,
-        #toolbar label.file-label:active {
-            background-color: #505050;
-        }
-
-
-        #toolbar label { /* For non-button labels */
-            margin-right: 5px;
-            font-size: 14px;
-        }
-
-        #toolbar input[type="file"] {
-            display: none; /* Hide default file input */
-        }
-
-        #container {
-            flex-grow: 1;
-            position: relative;
-            background-color: #d0d0d0; /* Canvas area background slightly different */
-        }
-
-        #info {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(0, 0, 0, 0.6);
-            color: white;
-            padding: 8px 12px;
-            border-radius: 4px;
-            font-size: 13px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-        }
-
-        #objectName {
-            padding: 8px 15px;
-            font-size: 14px;
-            color: #FFF; /* Light text for object name */
-            background-color: #555;
-            border-radius: 4px;
-            min-width: 150px;
-            text-align: center;
-        }
-
-        #downloadLinkModal {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: #ffffff;
-            padding: 25px 30px;
+            margin-bottom: 15px;
             border: 1px solid #ccc;
-            border-radius: 8px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            z-index: 1000;
-            display: none; /* Hidden by default */
+            border-radius: 5px;
+            background-color: #fff;
             color: #333;
-            text-align: center;
-            width: 400px;
+            font-size: 1em;
         }
-        #downloadLinkModal h4 {
-            margin-top: 0;
-            color: #333;
-            font-size: 18px;
-        }
-        #downloadLinkModal p {
-            font-size: 14px;
-            margin-bottom: 15px;
-        }
-        #downloadLinkModal a {
-            display: inline-block;
-            margin-bottom: 15px;
-            color: #007bff;
-            text-decoration: none;
-            font-weight: bold;
-        }
-        #downloadLinkModal a:hover {
-            text-decoration: underline;
-        }
-        #downloadLinkModal input[type="text"] {
-            width: calc(100% - 20px);
-            padding: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-            font-size: 14px;
-        }
-        #downloadLinkModal .modal-buttons button {
-            padding: 10px 20px;
-            margin: 0 5px;
-            background-color: #007bff;
+        #auth-screen button {
+            width: 100%; 
+            padding: 12px 25px;
+            background-color: #00629e;
             color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 5px;
             cursor: pointer;
-            font-size: 14px;
-            transition: background-color 0.2s ease;
+            margin-top: 10px;
+            font-size: 1em;
+            font-weight: 500;
         }
-        #downloadLinkModal .modal-buttons button:hover {
-            background-color: #0056b3;
+        #auth-screen button:hover {
+            background-color: #004c7a;
         }
-        #downloadLinkModal .modal-buttons button.secondary {
-            background-color: #6c757d;
+        #auth-screen .toggle-form {
+            margin-top: 15px;
+            color: #f0f0f0;
+            text-decoration: underline;
+            cursor: pointer;
+            text-align: center; 
         }
-        #downloadLinkModal .modal-buttons button.secondary:hover {
-            background-color: #545b62;
+        #auth-error {
+            color: #ffd2d2; 
+            margin-top: 10px;
+            text-align: center;
+            min-height: 1.2em;
+            font-weight: 500;
         }
 
+
+        /* --- SHARED PAGE COMPONENTS (for app pages) --- */
+        .page-header {
+            background-color: #2b5278; 
+            color: white;
+            padding: 0 15px;
+            height: 56px; 
+            display: flex;
+            align-items: center;
+            flex-shrink: 0; 
+        }
+        .page-header .icon-btn { background: none; border: none; color: white; font-size: 1.5em; cursor: pointer; padding: 8px; line-height: 1; }
+        .page-header .title { flex-grow: 1; font-size: 1.2em; font-weight: 500; margin-left: 10px; }
+        
+        .scrollable-content {
+            flex-grow: 1; 
+            overflow-y: auto; 
+            background-color: #212d3b; 
+        }
+
+        /* Chat List Item Styling */
+        .chat-list-item { padding: 10px 15px; cursor: pointer; display: flex; align-items: center; position: relative; min-height: 72px; border-bottom: 1px solid #1c2733; }
+        .chat-list-item:hover { background-color: #2a3948; }
+        .chat-list-item .avatar { width: 50px; height: 50px; border-radius: 50%; background-color: #555; margin-right: 12px; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 1.2em; flex-shrink: 0; color: #fff; }
+        .chat-list-item .chat-info { overflow: hidden; flex-grow: 1; padding-right: 70px; }
+        .chat-list-item .chat-info.no-meta { padding-right: 15px; }
+        .chat-list-item .chat-info .chat-name { font-weight: 500; font-size: 1em; color: #e1e3e5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px; }
+        .chat-list-item .chat-info .last-message { font-size: 0.9em; color: #8a99a7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .chat-list-item .chat-meta { position: absolute; top: 12px; right: 15px; text-align: right; font-size: 0.75em; color: #8a99a7; display: flex; flex-direction: column; align-items: flex-end; }
+        .chat-list-item .timestamp { margin-bottom: 5px; }
+        .chat-list-item .unread-badge { background-color: #4d91cc; color: white; font-size: 0.7em; padding: 3px 7px; border-radius: 10px; font-weight: 500; min-width: 20px; text-align: center; }
+
+        #new-chat-fab-page { 
+            position: fixed; 
+            bottom: 25px;
+            right: 25px;
+            background-color: #5288c1; color: white; width: 56px; height: 56px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 24px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); cursor: pointer; z-index: 100; border: none;
+        }
+        #new-chat-fab-page.hidden { display: none !important; }
+
+        /* --- ACTIVE CHAT PAGE --- */
+        .messages-container { 
+            padding: 15px; display: flex; flex-direction: column;
+        }
+        .message { margin-bottom: 8px; padding: 7px 12px; border-radius: 12px; max-width: 70%; word-wrap: break-word; line-height: 1.4; font-size: 0.95em; }
+        .my-message { background-color: #2b5278; align-self: flex-end; margin-left: auto; color: #e5eff8; }
+        .other-message { background-color: #26303c; align-self: flex-start; color: #d5dde3; }
+        .message .sender-name { font-size: 0.85em; color: #6ca9de; margin-bottom: 3px; font-weight: 500; }
+        .my-message .sender-name { display: none; }
+        .message .message-time { font-size: 0.7em; color: #707e8c; text-align: right; margin-top: 4px; }
+        .my-message .message-time { color: #8ab8e0; }
+
+        .chat-input-area-page {
+            display: flex; padding: 8px 12px; background-color: #212d3b; 
+            border-top: 1px solid #0f1a25; flex-shrink: 0; align-items: center;
+            min-height: 50px;
+        }
+        #message-input-page { 
+            flex-grow: 1; padding: 10px 15px; border: none; border-radius: 20px;
+            margin-right: 10px; outline: none; background-color: #17212b;
+            color: #cdd3d8; font-size: 0.95em;
+        }
+        #send-button-page { 
+            background-color: #5288c1; color: white; border: none; border-radius: 50%;
+            cursor: pointer; width: 40px; height: 40px; display: flex;
+            align-items: center; justify-content: center; font-size: 1.2em;
+        }
     </style>
 </head>
 <body>
 
-    <div id="toolbar">
-        <div class="toolbar-group">
-            <button id="addCube">Add Cube</button>
-            <button id="addSphere">Add Sphere</button>
-            <button id="addCylinder">Add Cylinder</button>
+    <div id="auth-screen"> <!-- Initially visible -->
+        <div class="auth-header">
+            <h1>Mera Telegram Jaisa App</h1>
         </div>
-        <div class="toolbar-group">
-            <label for="textureUpload" class="file-label">Upload Texture</label>
-            <input type="file" id="textureUpload" accept="image/*">
+        <div id="login-form"> <!-- No hidden class -->
+            <h2>Login</h2>
+            <input type="email" id="login-email" placeholder="Email">
+            <input type="password" id="login-password" placeholder="Password">
+            <button id="login-button">Login</button>
+            <!-- The p.toggle-form elements are now just visual, JS for them is removed -->
+            <p class="toggle-form" data-form="signup-form">Don't have an account? Sign Up</p>
         </div>
-        <div class="toolbar-group">
-            <label for="transformMode">Transform Mode:</label>
-            <select id="transformMode">
-                <option value="translate">Move (T)</option>
-                <option value="rotate">Rotate (R)</option>
-                <option value="scale">Scale (S)</option>
-            </select>
+        <div id="signup-form"> <!-- No hidden class -->
+            <h2>Sign Up</h2>
+            <input type="text" id="signup-display-name" placeholder="Display Name (e.g. Jade)">
+            <input type="email" id="signup-email" placeholder="Email (e.g. jass@gmail.com)">
+            <input type="password" id="signup-password" placeholder="Password">
+            <button id="signup-button">Sign Up</button>
+            <p class="toggle-form" data-form="login-form">Already have an account? Login</p>
         </div>
-        <div class="toolbar-group">
-            <button id="deleteSelected">Delete (Del)</button>
-            <button id="copySelected">Copy (Ctrl+C)</button>
-        </div>
-        <div class="toolbar-group">
-            <button id="saveProject">Save Project</button>
-            <label for="loadProjectInput" class="file-label">Load Project</label>
-            <input type="file" id="loadProjectInput" accept=".json">
-        </div>
-        <div class="toolbar-group">
-            <button id="exportGLB">Export GLB</button>
-            <label for="importGLBInput" class="file-label">Import GLB</label>
-            <input type="file" id="importGLBInput" accept=".glb,.gltf">
-        </div>
-        <div id="objectName" class="toolbar-group">No object selected</div>
+        <p id="auth-error"></p>
     </div>
 
-    <div id="container">
-        <div id="info">Tip: Click an object to select. Drag mouse to orbit, scroll to zoom.</div>
+    <div id="page-chat-list" class="app-page"> <!-- Initially hidden by .app-page style -->
+        <header class="page-header">
+            <button class="icon-btn" id="main-menu-btn">☰</button>
+            <span class="title">Telegram</span>
+            <button class="icon-btn" id="search-chats-btn">🔍</button>
+        </header>
+        <div class="scrollable-content" id="chat-list-container-page"></div>
+        <button id="new-chat-fab-page" title="New Chat" class="hidden">✎</button>
     </div>
 
-    <div id="downloadLinkModal">
-        <h4>Your Download Link is Ready</h4>
-        <p>Copy this link or click the button below to download:</p>
-        <input type="text" id="generatedLinkInput" readonly>
-        <a id="generatedLinkAnchor" href="#" download="scene.glb" target="_blank">Download File</a>
-        <div class="modal-buttons">
-            <button id="copyLinkButton">Copy Link</button>
-            <button id="closeLinkModalButton" class="secondary">Close</button>
+    <div id="page-contacts-select" class="app-page">
+        <header class="page-header">
+            <button class="icon-btn" id="back-from-contacts-btn">←</button>
+            <span class="title">New Message</span>
+        </header>
+        <div class="scrollable-content" id="contacts-list-container-page"></div>
+    </div>
+
+    <div id="page-active-chat" class="app-page">
+        <header class="page-header">
+            <button class="icon-btn" id="back-from-chat-btn">←</button>
+            <span class="title" id="active-chat-name-page">Chat Name</span>
+            <button class="icon-btn" id="chat-options-btn">⋮</button>
+        </header>
+        <div class="scrollable-content messages-container" id="messages-container-page"></div>
+        <div class="chat-input-area-page">
+            <input type="text" id="message-input-page" placeholder="Type a message...">
+            <button id="send-button-page">➢</button>
         </div>
     </div>
 
-    <script type="importmap">
-    {
-        "imports": {
-            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-database.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDK5_blHE_dw63DhFBNAKmcRNepFxnYq5E", // YOUR KEY
+            authDomain: "instagram-f0352.firebaseapp.com",
+            projectId: "instagram-f0352",
+            storageBucket: "instagram-f0352.firebasestorage.app",
+            messagingSenderId: "961783441132",
+            appId: "1:961783441132:web:7cfc0dff1f22efa75ee7c9",
+            measurementId: "G-YS3TPDZWGW"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        // DOM Elements - Auth
+        const authScreenEl = document.getElementById('auth-screen');
+        // const loginFormEl = document.getElementById('login-form'); // Not needed for toggling anymore
+        // const signupFormEl = document.getElementById('signup-form'); // Not needed for toggling anymore
+        const authErrorEl = document.getElementById('auth-error');
+        const signupDisplayNameInput = document.getElementById('signup-display-name');
+        const signupEmailInput = document.getElementById('signup-email');
+        const signupPasswordInput = document.getElementById('signup-password');
+        const loginEmailInput = document.getElementById('login-email');
+        const loginPasswordInput = document.getElementById('login-password');
+        // const toggleFormLinks = document.querySelectorAll('.toggle-form'); // Not used for toggling now
+
+        // DOM Elements - Pages
+        const pageChatList = document.getElementById('page-chat-list');
+        const pageContactsSelect = document.getElementById('page-contacts-select');
+        const pageActiveChat = document.getElementById('page-active-chat');
+
+        // DOM Elements - Chat List Page
+        const chatListContainerPage = document.getElementById('chat-list-container-page');
+        const newChatFabPage = document.getElementById('new-chat-fab-page');
+        const mainMenuBtn = document.getElementById('main-menu-btn');
+        const searchChatsBtn = document.getElementById('search-chats-btn');
+
+        // DOM Elements - Contacts Select Page
+        const contactsListContainerPage = document.getElementById('contacts-list-container-page');
+        const backFromContactsBtn = document.getElementById('back-from-contacts-btn');
+
+        // DOM Elements - Active Chat Page
+        const activeChatNamePage = document.getElementById('active-chat-name-page');
+        const messagesContainerPage = document.getElementById('messages-container-page');
+        const messageInputPage = document.getElementById('message-input-page');
+        const sendButtonPage = document.getElementById('send-button-page');
+        const backFromChatBtn = document.getElementById('back-from-chat-btn');
+        const chatOptionsBtn = document.getElementById('chat-options-btn');
+
+        let currentUser = null;
+        let currentChatPartner = null;
+        let activeChatId = null;
+        let messagesListener = null; // Will store the callback function for messages
+        let currentChatMessagesRef = null; // Will store the Firebase ref for current messages
+        let userChatsListener = null;
+
+        function showPage(pageId) {
+            [pageChatList, pageContactsSelect, pageActiveChat].forEach(page => {
+                page.classList.remove('active');
+            });
+            authScreenEl.classList.add('hidden'); 
+
+            if (pageId === 'auth-screen') {
+                authScreenEl.classList.remove('hidden');
+                // authScreenEl.classList.add('active'); // Not needed as it's not an .app-page
+            } else {
+                const pageToShow = document.getElementById(pageId);
+                if (pageToShow) {
+                    pageToShow.classList.add('active');
+                }
+            }
+            if (pageId === 'page-chat-list' && currentUser) {
+                newChatFabPage.classList.remove('hidden');
+            } else {
+                newChatFabPage.classList.add('hidden');
+            }
         }
-    }
-    </script>
-
-    <script type="module">
-        import * as THREE from 'three';
-        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-        import { TransformControls } from 'three/addons/controls/TransformControls.js';
-        import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
-        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-
-        let scene, camera, renderer;
-        let orbitControls, transformControls;
-        let selectedObject = null;
-        const selectableObjects = [];
-        let gridHelper;
-
-        const container = document.getElementById('container');
-        const objectNameDiv = document.getElementById('objectName');
-        const downloadLinkModal = document.getElementById('downloadLinkModal');
-        const generatedLinkAnchor = document.getElementById('generatedLinkAnchor');
-        const generatedLinkInput = document.getElementById('generatedLinkInput');
-        const copyLinkButton = document.getElementById('copyLinkButton');
-        const closeLinkModalButton = document.getElementById('closeLinkModalButton');
-        let currentBlobUrl = null;
-
-        init();
-        animate();
-
-        function init() {
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0xaaaaaa); // Neutral grey background
-
-            camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
-            camera.position.set(5, 5, 5);
-            camera.lookAt(0, 0, 0);
-
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(container.clientWidth, container.clientHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
-            renderer.shadowMap.enabled = true; // Enable shadows
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-            container.appendChild(renderer.domElement);
-
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-            scene.add(ambientLight);
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
-            directionalLight.position.set(5, 10, 7.5);
-            directionalLight.castShadow = true;
-            directionalLight.shadow.mapSize.width = 1024;
-            directionalLight.shadow.mapSize.height = 1024;
-            directionalLight.shadow.camera.near = 0.5;
-            directionalLight.shadow.camera.far = 50;
-            scene.add(directionalLight);
-
-            gridHelper = new THREE.GridHelper(20, 20, 0x888888, 0x444444);
-            scene.add(gridHelper);
-
-            orbitControls = new OrbitControls(camera, renderer.domElement);
-            orbitControls.enableDamping = true;
-            orbitControls.dampingFactor = 0.05;
-
-            transformControls = new TransformControls(camera, renderer.domElement);
-            transformControls.addEventListener('dragging-changed', (event) => {
-                orbitControls.enabled = !event.value;
-            });
-            scene.add(transformControls);
-
-            const raycaster = new THREE.Raycaster();
-            const mouse = new THREE.Vector2();
-
-            renderer.domElement.addEventListener('click', (event) => {
-                if (event.target !== renderer.domElement || transformControls.dragging) return;
+        
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                currentUser = { uid: user.uid, email: user.email };
+                db.ref('users/' + user.uid + '/profile/displayName').once('value').then(snapshot => {
+                    currentUser.displayName = snapshot.val() || user.email.split('@')[0];
+                });
+                showPage('page-chat-list');
+                loadUserChats();
+            } else {
+                if (currentChatMessagesRef && messagesListener) {
+                     currentChatMessagesRef.off('child_added', messagesListener);
+                }
+                if (userChatsListener) userChatsListener.off();
+                currentUser = null; currentChatPartner = null; activeChatId = null;
+                messagesListener = null; currentChatMessagesRef = null; userChatsListener = null;
                 
-                const rect = renderer.domElement.getBoundingClientRect();
-                mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-                mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+                showPage('auth-screen');
+                chatListContainerPage.innerHTML = '';
+                contactsListContainerPage.innerHTML = '';
+                messagesContainerPage.innerHTML = '';
+                authErrorEl.textContent = '';
+                // Reset form fields if they exist (check for null if elements are removed)
+                if(document.getElementById('login-form')) document.getElementById('login-form').reset(); 
+                if(document.getElementById('signup-form')) document.getElementById('signup-form').reset();
+            }
+        });
+        
+        // Removed toggleFormLinks event listener as forms are always visible on auth screen.
+        
+        document.getElementById('signup-button').addEventListener('click', () => {
+            const email = signupEmailInput.value;
+            const password = signupPasswordInput.value;
+            const displayName = signupDisplayNameInput.value.trim();
+            if (!displayName) { authErrorEl.textContent = "Display Name is required."; return; }
+            authErrorEl.textContent = '';
+            auth.createUserWithEmailAndPassword(email, password)
+                .then(userCredential => {
+                    const userToUpdate = userCredential.user;
+                    return db.ref('users/' + userToUpdate.uid + '/profile').set({
+                        email: userToUpdate.email, displayName: displayName, createdAt: firebase.database.ServerValue.TIMESTAMP
+                    });
+                }).catch(error => authErrorEl.textContent = error.message);
+        });
 
-                raycaster.setFromCamera(mouse, camera);
-                const intersects = raycaster.intersectObjects(selectableObjects, true);
+        document.getElementById('login-button').addEventListener('click', () => {
+            const email = loginEmailInput.value;
+            const password = loginPasswordInput.value;
+            authErrorEl.textContent = '';
+            auth.signInWithEmailAndPassword(email, password)
+                .catch(error => authErrorEl.textContent = error.message);
+        });
 
-                if (intersects.length > 0) {
-                    let objectToSelect = intersects[0].object;
-                    while(objectToSelect.parent && objectToSelect.parent !== scene && !selectableObjects.includes(objectToSelect)){
-                        objectToSelect = objectToSelect.parent;
-                    }
-                    if (selectableObjects.includes(objectToSelect)) {
-                        selectObject(objectToSelect);
-                    } else {
-                         if (selectedObject) deselectObject();
-                    }
-                } else {
-                    deselectObject();
+        mainMenuBtn.addEventListener('click', () => {
+            if (confirm("Logout?")) { auth.signOut(); }
+        });
+        searchChatsBtn.addEventListener('click', () => alert("Search chats - not implemented"));
+        chatOptionsBtn.addEventListener('click', () => alert("Chat options - not implemented"));
+
+        newChatFabPage.addEventListener('click', () => {
+            showPage('page-contacts-select');
+            loadUsersForNewChat();
+        });
+        backFromContactsBtn.addEventListener('click', () => showPage('page-chat-list'));
+        
+        backFromChatBtn.addEventListener('click', () => {
+            if (currentChatMessagesRef && messagesListener) {
+                 currentChatMessagesRef.off('child_added', messagesListener);
+                 messagesListener = null;
+                 currentChatMessagesRef = null;
+            }
+            activeChatId = null; // Clear active chat ID
+            currentChatPartner = null; // Clear current partner
+            showPage('page-chat-list');
+        });
+
+        sendButtonPage.addEventListener('click', sendMessageToActiveChatPage);
+        messageInputPage.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessageToActiveChatPage();
+            }
+        });
+
+        function getChatId(uid1, uid2) { return uid1 < uid2 ? `${uid1}_${uid2}` : `${uid2}_${uid1}`; }
+
+        function loadUserChats() {
+            // ... (Copy the full function from the previous response, it's correct)
+            if (!currentUser) return;
+            if (userChatsListener) userChatsListener.off(); // Detach old listener if any
+
+            const userChatsRef = db.ref('userChats/' + currentUser.uid).orderByChild('timestamp');
+            userChatsListener = userChatsRef; // Store the ref itself
+
+            userChatsRef.on('value', snapshot => {
+                const chatListItemsPromises = [];
+                if (!snapshot.exists() || snapshot.numChildren() === 0) {
+                    chatListContainerPage.innerHTML = `<p style="padding:20px; text-align:center; color:#8a99a7;">No chats yet. Tap ✎ to start one!</p>`;
+                    return;
                 }
-            });
+                snapshot.forEach(childSnapshot => {
+                    const chatData = childSnapshot.val();
+                    const chatPartnerUid = childSnapshot.key;
+                    chatListItemsPromises.push(
+                        db.ref('users/' + chatPartnerUid + '/profile').once('value').then(profileSnap => {
+                            const partnerProfile = profileSnap.val();
+                            if (partnerProfile) {
+                                return {
+                                    partnerUid: chatPartnerUid,
+                                    partnerDisplayName: partnerProfile.displayName || partnerProfile.email.split('@')[0],
+                                    partnerEmail: partnerProfile.email,
+                                    lastMessage: chatData.lastMessage || "...",
+                                    timestamp: chatData.timestamp,
+                                    unreadCount: chatData.unreadCount || 0
+                                };
+                            }
+                            return null;
+                        }).catch(e => { console.warn("Error fetching profile for", chatPartnerUid, e); return null; })
+                    );
+                });
 
-            document.getElementById('addCube').addEventListener('click', addCube);
-            document.getElementById('addSphere').addEventListener('click', addSphere);
-            document.getElementById('addCylinder').addEventListener('click', addCylinder);
-            document.getElementById('textureUpload').addEventListener('change', applyTexture);
-            document.getElementById('transformMode').addEventListener('change', (e) => {
-                if (transformControls) transformControls.setMode(e.target.value);
-            });
-            document.getElementById('deleteSelected').addEventListener('click', deleteSelectedObject);
-            document.getElementById('copySelected').addEventListener('click', copySelectedObject);
-            document.getElementById('saveProject').addEventListener('click', saveProject);
-            document.getElementById('loadProjectInput').addEventListener('change', handleLoadProject);
-            document.getElementById('exportGLB').addEventListener('click', exportGLB);
-            document.getElementById('importGLBInput').addEventListener('change', handleImportGLB);
-
-            closeLinkModalButton.addEventListener('click', () => {
-                downloadLinkModal.style.display = 'none';
-                if (currentBlobUrl) {
-                    URL.revokeObjectURL(currentBlobUrl);
-                    currentBlobUrl = null;
-                }
-            });
-
-            copyLinkButton.addEventListener('click', () => {
-                generatedLinkInput.select();
-                try {
-                    document.execCommand('copy');
-                    alert('Link copied to clipboard!');
-                } catch (err) {
-                    alert('Failed to copy link. Please copy it manually.');
-                }
-            });
-
-
-            window.addEventListener('keydown', (event) => {
-                if (document.activeElement.tagName === 'INPUT' || 
-                    document.activeElement.tagName === 'SELECT' || 
-                    document.activeElement.tagName === 'TEXTAREA' ||
-                    downloadLinkModal.style.display === 'block') {
-                    if (event.key === "Escape" && downloadLinkModal.style.display === 'block') {
-                        closeLinkModalButton.click();
-                    } else if (event.key === "Escape") {
-                        document.activeElement.blur();
+                Promise.all(chatListItemsPromises)
+                .then(resolvedChatItems => {
+                    chatListContainerPage.innerHTML = ''; // Clear before rendering
+                    const validItems = resolvedChatItems.filter(item => item !== null);
+                    validItems.sort((a, b) => b.timestamp - a.timestamp); // Newest first
+                    
+                    if (validItems.length === 0) {
+                        // This case might be hit if profiles couldn't be fetched but snapshot had children
+                        chatListContainerPage.innerHTML = `<p style="padding:20px; text-align:center; color:#8a99a7;">No chats found or error loading details.</p>`;
+                    } else { 
+                        validItems.forEach(chatInfo => renderChatListItemPage(chatInfo)); 
                     }
+                });
+            }, error => {
+                console.error("Error loading user chats:", error);
+                chatListContainerPage.innerHTML = `<p style="padding:20px; text-align:center; color:red;">Error loading chats.</p>`;
+            });
+        }
+
+        function renderChatListItemPage(chatInfo) {
+            // ... (Copy the full function from the previous response)
+            const item = document.createElement('div');
+            item.classList.add('chat-list-item');
+            item.dataset.partnerUid = chatInfo.partnerUid;
+
+            const avatar = document.createElement('div');
+            avatar.classList.add('avatar');
+            avatar.textContent = chatInfo.partnerDisplayName.substring(0,1).toUpperCase();
+            
+            const infoDiv = document.createElement('div');
+            infoDiv.classList.add('chat-info');
+            const nameEl = document.createElement('div');
+            nameEl.classList.add('chat-name');
+            nameEl.textContent = chatInfo.partnerDisplayName;
+            const lastMsgEl = document.createElement('div');
+            lastMsgEl.classList.add('last-message');
+            lastMsgEl.textContent = chatInfo.lastMessage;
+
+            infoDiv.appendChild(nameEl);
+            infoDiv.appendChild(lastMsgEl);
+
+            const metaDiv = document.createElement('div');
+            metaDiv.classList.add('chat-meta');
+            const timeEl = document.createElement('span');
+            timeEl.classList.add('timestamp');
+            timeEl.textContent = chatInfo.timestamp ? new Date(chatInfo.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+            metaDiv.appendChild(timeEl);
+
+            if (chatInfo.unreadCount > 0) {
+                const unreadEl = document.createElement('span');
+                unreadEl.classList.add('unread-badge');
+                unreadEl.textContent = chatInfo.unreadCount > 99 ? "99+" : chatInfo.unreadCount;
+                metaDiv.appendChild(unreadEl);
+            }
+            
+            item.appendChild(avatar);
+            item.appendChild(infoDiv);
+            item.appendChild(metaDiv);
+
+            item.addEventListener('click', () => {
+                currentChatPartner = { uid: chatInfo.partnerUid, displayName: chatInfo.partnerDisplayName, email: chatInfo.partnerEmail };
+                if (currentUser && chatInfo.partnerUid) {
+                    db.ref('userChats/' + currentUser.uid + '/' + chatInfo.partnerUid + '/unreadCount').set(0);
+                }
+                openChatPage(currentChatPartner);
+            });
+            chatListContainerPage.appendChild(item);
+        }
+        
+        function loadUsersForNewChat() {
+            // ... (Copy the full function from the previous response)
+            if (!currentUser) return;
+            contactsListContainerPage.innerHTML = `<p style="padding:15px; text-align:center; color:#8a99a7;">Loading users...</p>`;
+            db.ref('users').once('value').then(snapshot => {
+                contactsListContainerPage.innerHTML = ''; // Clear loading message
+                if (!snapshot.exists()) { 
+                    contactsListContainerPage.innerHTML = `<p style="padding:15px; text-align:center; color:#8a99a7;">No other users found.</p>`;
                     return; 
                 }
-                
-                if (event.ctrlKey && event.key.toLowerCase() === 'c') {
-                    event.preventDefault(); 
-                    copySelectedObject();
-                    return;
+                let usersFound = 0;
+                snapshot.forEach(childSnapshot => {
+                    const uid = childSnapshot.key;
+                    const profile = childSnapshot.val().profile;
+                    if (uid !== currentUser.uid && profile) { // Don't list self, ensure profile exists
+                        usersFound++;
+                        renderContactItemPage(profile, uid);
+                    }
+                });
+                if (usersFound === 0) { 
+                    contactsListContainerPage.innerHTML = `<p style="padding:15px; text-align:center; color:#8a99a7;">No other users to chat with.</p>`;
                 }
-
-                switch (event.key.toLowerCase()) {
-                    case 't':
-                        transformControls.setMode("translate");
-                        document.getElementById('transformMode').value = "translate";
-                        break;
-                    case 'r':
-                        transformControls.setMode("rotate");
-                        document.getElementById('transformMode').value = "rotate";
-                        break;
-                    case 's':
-                        transformControls.setMode("scale");
-                        document.getElementById('transformMode').value = "scale";
-                        break;
-                    case 'delete':
-                    case 'backspace':
-                         if (selectedObject) deleteSelectedObject();
-                        break;
-                }
+            }).catch(error => {
+                console.error("Error loading users for new chat:", error);
+                contactsListContainerPage.innerHTML = `<p style="padding:15px; text-align:center; color:red;">Error loading users.</p>`;
             });
+        }
+
+        function renderContactItemPage(profile, uid) {
+            // ... (Copy the full function from the previous response)
+            const item = document.createElement('div');
+            item.classList.add('chat-list-item');
             
-            window.addEventListener('resize', onWindowResize);
+            const avatar = document.createElement('div');
+            avatar.classList.add('avatar');
+            avatar.textContent = (profile.displayName || profile.email.split('@')[0]).substring(0,1).toUpperCase();
+
+            const infoDiv = document.createElement('div');
+            infoDiv.classList.add('chat-info');
+            infoDiv.classList.add('no-meta'); 
+            
+            const nameEl = document.createElement('div');
+            nameEl.classList.add('chat-name');
+            nameEl.textContent = profile.displayName || profile.email.split('@')[0];
+            
+            const emailEl = document.createElement('div'); 
+            emailEl.classList.add('last-message');
+            emailEl.textContent = profile.email;
+            
+            infoDiv.appendChild(nameEl);
+            infoDiv.appendChild(emailEl);
+            item.appendChild(avatar);
+            item.appendChild(infoDiv);
+
+            item.addEventListener('click', () => {
+                const targetUser = { uid: uid, displayName: profile.displayName || profile.email.split('@')[0], email: profile.email };
+                startNewChatWithUserAndGoToChatPage(targetUser);
+            });
+            contactsListContainerPage.appendChild(item);
         }
 
-        function selectObject(object) {
-            if (selectedObject === object) return;
-            deselectObject();
-            selectedObject = object;
-            transformControls.attach(object);
-            updateObjectNameDisplay();
-        }
-
-        function deselectObject() {
-            if (selectedObject) {
-                transformControls.detach();
+        function openChatPage(partner) {
+            // ... (Copy the full function from the previous response, ensure listener detachment is correct)
+            if (!currentUser || !partner) return; // Added a check for partner
+            
+            // Detach listener for the PREVIOUS chat if it exists
+            if (currentChatMessagesRef && messagesListener) {
+                 currentChatMessagesRef.off('child_added', messagesListener);
             }
-            selectedObject = null;
-            updateObjectNameDisplay();
+
+            activeChatId = getChatId(currentUser.uid, partner.uid);
+            currentChatPartner = partner;
+
+            activeChatNamePage.textContent = partner.displayName;
+            messagesContainerPage.innerHTML = ''; // Clear previous messages
+
+            showPage('page-active-chat');
+
+            currentChatMessagesRef = db.ref('chats/' + activeChatId + '/messages').orderByChild('timestamp').limitToLast(50);
+            
+            const messageCallback = snapshot => { // Define callback locally
+                displayMessagePage(snapshot.val());
+            };
+            messagesListener = messageCallback; // Store this specific callback
+            currentChatMessagesRef.on('child_added', messagesListener); // Attach with this specific callback
         }
         
-        function updateObjectNameDisplay() {
-            if (selectedObject) {
-                objectNameDiv.textContent = `Selected: ${selectedObject.name || 'Untitled Object'}`;
+        function displayMessagePage(message) {
+            // ... (Copy the full function from the previous response)
+            const msgDiv = document.createElement('div');
+            msgDiv.classList.add('message');
+            const senderNameSpan = document.createElement('div');
+            senderNameSpan.classList.add('sender-name');
+            const messageTextSpan = document.createElement('div');
+            messageTextSpan.classList.add('message-text');
+            messageTextSpan.textContent = message.text; // Ensure message.text exists
+            const timeSpan = document.createElement('div');
+            timeSpan.classList.add('message-time');
+            timeSpan.textContent = message.timestamp ? new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'sending...';
+
+            if (currentUser && message.senderId === currentUser.uid) {
+                msgDiv.classList.add('my-message');
             } else {
-                objectNameDiv.textContent = 'No object selected';
+                msgDiv.classList.add('other-message');
+                senderNameSpan.textContent = message.senderDisplayName || (message.senderEmail ? message.senderEmail.split('@')[0] : 'User');
+                msgDiv.appendChild(senderNameSpan);
+            }
+            msgDiv.appendChild(messageTextSpan);
+            msgDiv.appendChild(timeSpan);
+            messagesContainerPage.appendChild(msgDiv);
+            if(messagesContainerPage.scrollHeight > messagesContainerPage.clientHeight) {
+                 messagesContainerPage.scrollTop = messagesContainerPage.scrollHeight;
             }
         }
-        
-        function ensureUniqueName(baseName, objectList) {
-            let name = baseName;
-            let counter = 1;
-            const existingNames = objectList.map(obj => obj.name);
-            while(existingNames.includes(name)) {
-                name = `${baseName}_${counter++}`;
-            }
-            return name;
-        }
 
-        function createMesh(geometry, namePrefix, materialProperties = null, position = null, rotation = null, scale = null, customName = null, customUserData = null) {
-            const material = materialProperties ? 
-                new THREE.MeshStandardMaterial(materialProperties) :
-                new THREE.MeshStandardMaterial({ 
-                    color: new THREE.Color(Math.random() * 0xffffff), 
-                    metalness: 0.3, 
-                    roughness: 0.6 
-                });
-
-            const mesh = new THREE.Mesh(geometry, material);
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
-            
-            if (customName) {
-                mesh.name = ensureUniqueName(customName, selectableObjects);
-            } else {
-                mesh.name = ensureUniqueName(namePrefix, selectableObjects);
-            }
-            
-            if (position) {
-                mesh.position.copy(position);
-            } else {
-                mesh.position.set(
-                    (Math.random() - 0.5) * 4,
-                    geometry.parameters.height ? geometry.parameters.height / 2 : (geometry.parameters.radius || 0.5),
-                    (Math.random() - 0.5) * 4
-                );
-            }
-            if (rotation) mesh.rotation.copy(rotation);
-            if (scale) mesh.scale.copy(scale);
-            
-            mesh.userData = customUserData || {
-                geometryType: namePrefix.toLowerCase(),
-                geometryParameters: JSON.parse(JSON.stringify(geometry.parameters))
+        function sendMessageToActiveChatPage() {
+            // ... (Copy the full function from the previous response)
+            const text = messageInputPage.value.trim();
+            if (!text || !currentUser || !currentChatPartner || !activeChatId) return;
+            const messageData = {
+                text: text, senderId: currentUser.uid, senderEmail: currentUser.email,
+                senderDisplayName: currentUser.displayName, receiverId: currentChatPartner.uid, 
+                timestamp: firebase.database.ServerValue.TIMESTAMP
             };
-            if (geometry.type) {
-                mesh.userData.threeGeometryType = geometry.type;
-            }
-
-            if (!mesh.userData.material) mesh.userData.material = {};
-            mesh.userData.material.color = material.color.getHexString();
-            mesh.userData.material.metalness = material.metalness;
-            mesh.userData.material.roughness = material.roughness;
-            if (material.map && material.map.image && material.map.image.src){
-                mesh.userData.material.textureSrc = material.map.image.src;
-            }
-
-            scene.add(mesh);
-            selectableObjects.push(mesh);
-            return mesh;
-        }
-
-        function addCube() {
-            const geometry = new THREE.BoxGeometry(1, 1, 1);
-            const mesh = createMesh(geometry, "Cube");
-            selectObject(mesh);
-        }
-
-        function addSphere() {
-            const geometry = new THREE.SphereGeometry(0.75, 32, 16);
-            const mesh = createMesh(geometry, "Sphere");
-            selectObject(mesh);
-        }
-
-        function addCylinder() {
-            const geometry = new THREE.CylinderGeometry(0.5, 0.5, 1.5, 32);
-            const mesh = createMesh(geometry, "Cylinder");
-            selectObject(mesh);
-        }
-
-        function applyTexture(event) {
-            if (!selectedObject) {
-                alert("Please select an object first to apply a texture!");
-                event.target.value = "";
-                return;
-            }
-            if (!selectedObject.isMesh && !(selectedObject.isGroup && selectedObject.children.some(c => c.isMesh))) {
-                 alert("Texture can only be applied to a Mesh or a Group containing Meshes.");
-                event.target.value = "";
-                return;
-            }
-
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (e_reader) => {
-                    const textureLoader = new THREE.TextureLoader();
-                    textureLoader.load(e_reader.target.result, (texture) => {
-                        texture.colorSpace = THREE.SRGBColorSpace;
-                        texture.flipY = false;
-
-                        const applyToMaterial = (mat) => {
-                            if (mat.map) mat.map.dispose();
-                            mat.map = texture.clone();
-                            mat.map.needsUpdate = true;
-                            mat.color.set(0xffffff); 
-                            mat.needsUpdate = true;
-                        };
-                        
-                        if (selectedObject.isMesh) {
-                            const materials = Array.isArray(selectedObject.material) ? selectedObject.material : [selectedObject.material];
-                            materials.forEach(applyToMaterial);
-                             if(!Array.isArray(selectedObject.material)) {
-                               selectedObject.material.map = texture;
-                            }
-                        } else if (selectedObject.isGroup) {
-                            selectedObject.traverse(child => {
-                                if (child.isMesh) {
-                                    const materials = Array.isArray(child.material) ? child.material : [child.material];
-                                    materials.forEach(applyToMaterial);
-                                }
-                            });
-                        }
-
-                        if (!selectedObject.userData.material) selectedObject.userData.material = {};
-                        selectedObject.userData.material.textureSrc = e_reader.target.result; 
-                        selectedObject.userData.material.color = "ffffff";
-
-                    }, undefined, (err) => {
-                        console.error("Texture load error:", err);
-                        alert("Error loading texture.");
-                    });
-                }
-                reader.readAsDataURL(file);
-            }
-            event.target.value = ""; 
-        }
-
-        function deleteSelectedObject() {
-            if (selectedObject) {
-                transformControls.detach(); 
-                
-                selectedObject.traverse(child => {
-                    if (child.isMesh) {
-                        if (child.geometry) child.geometry.dispose();
-                        if (child.material) {
-                            const materials = Array.isArray(child.material) ? child.material : [child.material];
-                            materials.forEach(mat => {
-                                if (mat.map) mat.map.dispose();
-                                mat.dispose();
-                            });
-                        }
-                    }
-                });
-
-                scene.remove(selectedObject);
-                
-                const index = selectableObjects.indexOf(selectedObject);
-                if (index > -1) {
-                    selectableObjects.splice(index, 1);
-                }
-                
-                selectedObject = null;
-                updateObjectNameDisplay();
-            } else {
-                alert("No object selected for deletion.");
-            }
-        }
-
-        function copySelectedObject() {
-            if (!selectedObject) {
-                alert("No object selected for copying.");
-                return;
-            }
-
-            const original = selectedObject;
-            const clone = original.clone(true);
-
-            let baseName = (original.name || "Object").replace(/_copy(?:_\d+)?$/, "");
-            let copyNameAttempt = `${baseName}_copy`;
-            clone.name = ensureUniqueName(copyNameAttempt, selectableObjects);
-
-            clone.position.copy(original.position).add(new THREE.Vector3(0.5, 0.5, 0));
-
-            try {
-                clone.userData = JSON.parse(JSON.stringify(original.userData));
-                if (clone.userData.material && original.userData.material && original.userData.material.textureSrc) {
-                    clone.userData.material.textureSrc = original.userData.material.textureSrc;
-                }
-            } catch (e) {
-                console.warn("Could not fully deep copy userData for cloned object:", e);
-                clone.userData = { ...original.userData };
-            }
+            db.ref('chats/' + activeChatId + '/messages').push(messageData);
+            const membersUpdate = {};
+            membersUpdate[currentUser.uid] = true; membersUpdate[currentChatPartner.uid] = true;
+            db.ref('chats/' + activeChatId + '/members').update(membersUpdate);
             
-            const primeMeshForUserData = clone.isMesh ? clone : (clone.isGroup ? clone.children.find(c=>c.isMesh) : null);
-            if (primeMeshForUserData && primeMeshForUserData.material) {
-                const mat = Array.isArray(primeMeshForUserData.material) ? primeMeshForUserData.material[0] : primeMeshForUserData.material;
-                if (!clone.userData.material) clone.userData.material = {};
-                clone.userData.material.color = mat.color.getHexString();
-                clone.userData.material.metalness = mat.metalness;
-                clone.userData.material.roughness = mat.roughness;
-                if (mat.map && clone.userData.material.textureSrc) {
-                     clone.userData.material.color = "ffffff";
-                } else {
-                     delete clone.userData.material.textureSrc;
-                }
-            }
+            const chatSummary = {
+                lastMessage: text, timestamp: firebase.database.ServerValue.TIMESTAMP,
+            };
+            db.ref('userChats/' + currentUser.uid + '/' + currentChatPartner.uid).update({...chatSummary, unreadCount: 0 });
+            const partnerChatRef = db.ref('userChats/' + currentChatPartner.uid + '/' + currentUser.uid);
+            partnerChatRef.update(chatSummary); 
+            partnerChatRef.child('unreadCount').set(firebase.database.ServerValue.increment(1)); 
 
-            scene.add(clone);
-            selectableObjects.push(clone);
-            selectObject(clone);
+            messageInputPage.value = '';
         }
 
-        function showDownloadLinkDialog(data, filename, mimeType) {
-            if (currentBlobUrl) { 
-                URL.revokeObjectURL(currentBlobUrl);
-            }
-            const blob = new Blob([data], { type: mimeType });
-            currentBlobUrl = URL.createObjectURL(blob);
-
-            generatedLinkAnchor.href = currentBlobUrl;
-            generatedLinkAnchor.download = filename;
-            generatedLinkInput.value = currentBlobUrl;
+        function startNewChatWithUserAndGoToChatPage(partner) {
+            // ... (Copy the full function from the previous response)
+            if (!currentUser || !partner ) return; // Added check for partner
+            const tempActiveChatId = getChatId(currentUser.uid, partner.uid);
             
-            downloadLinkModal.style.display = 'block';
-        }
-
-        function exportGLB() { // Not async anymore
-            if (selectableObjects.length === 0) {
-                alert("No objects in the scene to export.");
-                return;
-            }
-            const exporter = new GLTFExporter();
-            const options = {
-                binary: true,
-                trs: false,
-                onlyVisible: true,
-                truncateDrawRange: true,
-                embedImages: true,
-                animations: []
-            };
-
-            let gridHelperWasInScene = false;
-            if (gridHelper && gridHelper.parent === scene) {
-                scene.remove(gridHelper);
-                gridHelperWasInScene = true;
-            }
-            const previouslyAttachedObject = transformControls.object;
-            let transformControlsWasInScene = false;
-            if (transformControls.object) transformControls.detach();
-            if (transformControls.parent === scene) {
-                scene.remove(transformControls);
-                transformControlsWasInScene = true;
-            }
-
-            const exportables = selectableObjects.map(obj => {
-                const cloned = obj.clone(true);
-                cloned.traverse(child => {
-                    if (child.isMesh) child.castShadow = false;
-                });
-                return cloned;
-            });
-
-            const onDone = function (result) { // Not async anymore
-                if (gridHelperWasInScene) scene.add(gridHelper);
-                if (transformControlsWasInScene) scene.add(transformControls);
-                if (previouslyAttachedObject) transformControls.attach(previouslyAttachedObject);
-
-                if (result instanceof ArrayBuffer) {
-                    const filename = 'scene.glb';
-                    // Fallback to download link dialog
-                    showDownloadLinkDialog(result, filename, 'model/gltf-binary');
-                } else {
-                    console.error("ArrayBuffer not found in GLB export.");
-                    alert("Error during GLB export.");
+            const userChatRefCurrentUser = db.ref('userChats/' + currentUser.uid + '/' + partner.uid);
+            userChatRefCurrentUser.once('value', snapshot => {
+                if (!snapshot.exists()) {
+                    const chatSummary = { lastMessage: "Chat started", timestamp: firebase.database.ServerValue.TIMESTAMP, unreadCount: 0 };
+                    db.ref('userChats/' + currentUser.uid + '/' + partner.uid).set(chatSummary);
+                    db.ref('userChats/' + partner.uid + '/' + currentUser.uid).set({...chatSummary, unreadCount: 0 });
                 }
-            };
-
-            const onError = function(error) {
-                console.error('Error exporting GLB:', error);
-                alert('Error exporting GLB. See console for details.');
-                if (gridHelperWasInScene) scene.add(gridHelper);
-                if (transformControlsWasInScene) scene.add(transformControls);
-                if (previouslyAttachedObject) transformControls.attach(previouslyAttachedObject);
-            };
-
-            try {
-                exporter.parse(exportables, onDone, onError, options);
-            } catch (e) {
-                onError(e);
-            }
-        }
-        
-        function saveProject() { // Not async anymore
-            if (selectableObjects.length === 0) {
-                alert("No objects in the scene to save.");
-                return;
-            }
-            const projectData = {
-                sceneBackground: scene.background ? '#' + scene.background.getHexString() : null,
-                camera: {
-                    position: camera.position.toArray(),
-                    rotation: [camera.rotation.x, camera.rotation.y, camera.rotation.z, camera.rotation.order],
-                    fov: camera.fov,
-                    aspect: camera.aspect,
-                    near: camera.near,
-                    far: camera.far,
-                    zoom: camera.zoom,
-                    target: orbitControls.target.toArray()
-                },
-                objects: []
-            };
-
-            selectableObjects.forEach(obj => {
-                const objData = {
-                    name: obj.name,
-                    position: obj.position.toArray(),
-                    rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z, obj.rotation.order],
-                    scale: obj.scale.toArray(),
-                    userData: JSON.parse(JSON.stringify(obj.userData)),
-                    visible: obj.visible
-                };
-
-                let mainMaterialSource = obj;
-                if (obj.isGroup) { 
-                    obj.traverse(child => {
-                        if(child.isMesh && !mainMaterialSource.isMesh) mainMaterialSource = child;
-                    });
-                }
-
-                if (mainMaterialSource.isMesh && mainMaterialSource.material) {
-                    const mat = Array.isArray(mainMaterialSource.material) ? mainMaterialSource.material[0] : mainMaterialSource.material;
-                    objData.material = {
-                        color: '#' + mat.color.getHexString(),
-                        metalness: mat.metalness,
-                        roughness: mat.roughness,
-                        mapSrc: (mat.map && mat.map.image && mat.map.image.src && typeof mat.map.image.src === 'string' && mat.map.image.src.startsWith('data:')) ? mat.map.image.src : null,
-                        emissive: '#' + mat.emissive.getHexString(),
-                        opacity: mat.opacity,
-                        transparent: mat.transparent,
-                        wireframe: mat.wireframe,
-                    };
-                } else if (obj.userData && obj.userData.material) {
-                     objData.material = JSON.parse(JSON.stringify(obj.userData.material));
-                }
-                projectData.objects.push(objData);
-            });
-
-            const jsonString = JSON.stringify(projectData, null, 2);
-            const filename = 'project.json';
-            
-            // Fallback to download link dialog
-            showDownloadLinkDialog(jsonString, filename, 'application/json');
-        }
-
-        function handleLoadProject(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = (e_reader) => {
-                try {
-                    const projectData = JSON.parse(e_reader.target.result);
-                    loadProjectData(projectData);
-                } catch (error) {
-                    console.error("Error loading project:", error);
-                    alert("Error loading project file. The file format might be incorrect.");
-                }
-            };
-            reader.readAsText(file);
-            event.target.value = ""; 
-        }
-
-        function loadProjectData(projectData) {
-            deselectObject();
-            while(selectableObjects.length > 0) {
-                const obj = selectableObjects.pop();
-                obj.traverse(child => {
-                    if (child.isMesh) {
-                        if (child.geometry) child.geometry.dispose();
-                        if (child.material) {
-                            const materials = Array.isArray(child.material) ? child.material : [child.material];
-                            materials.forEach(mat => {
-                                if (mat.map) mat.map.dispose();
-                                mat.dispose();
-                            });
-                        }
-                    }
-                });
-                scene.remove(obj);
-            }
-
-            if (projectData.sceneBackground) {
-                scene.background = new THREE.Color(projectData.sceneBackground);
-            } else {
-                scene.background = new THREE.Color(0xaaaaaa); 
-            }
-
-            if (projectData.camera) {
-                camera.position.fromArray(projectData.camera.position);
-                camera.rotation.fromArray(projectData.camera.rotation);
-                if (projectData.camera.fov) camera.fov = projectData.camera.fov;
-                if (projectData.camera.near) camera.near = projectData.camera.near;
-                if (projectData.camera.far) camera.far = projectData.camera.far;
-                if (projectData.camera.zoom) camera.zoom = projectData.camera.zoom;
-                camera.updateProjectionMatrix();
-                if (projectData.camera.target) {
-                    orbitControls.target.fromArray(projectData.camera.target);
-                    orbitControls.update();
-                }
-            }
-
-            const textureLoader = new THREE.TextureLoader();
-            const loadingPromises = [];
-
-            projectData.objects.forEach(objData => {
-                let mesh;
-                if (objData.userData && objData.userData.geometryType && ['cube', 'sphere', 'cylinder'].includes(objData.userData.geometryType)) {
-                    let geometry;
-                    const params = objData.userData.geometryParameters;
-                    switch(objData.userData.geometryType) {
-                        case 'cube':
-                            geometry = new THREE.BoxGeometry(params.width, params.height, params.depth);
-                            break;
-                        case 'sphere':
-                            geometry = new THREE.SphereGeometry(params.radius, params.widthSegments, params.heightSegments);
-                            break;
-                        case 'cylinder':
-                            geometry = new THREE.CylinderGeometry(params.radiusTop, params.radiusBottom, params.height, params.radialSegments);
-                            break;
-                    }
-                    mesh = createMesh( 
-                        geometry, 
-                        objData.userData.geometryType,
-                        null, 
-                        new THREE.Vector3().fromArray(objData.position),
-                        new THREE.Euler().fromArray(objData.rotation),
-                        new THREE.Vector3().fromArray(objData.scale),
-                        objData.name,
-                        JSON.parse(JSON.stringify(objData.userData))
-                    );
-                } else if (objData.userData && (objData.userData.geometryType === 'imported_glb' || objData.userData.threeGeometryType)) {
-                     console.warn(`Loading complex/imported geometry '${objData.name}' from project. For full fidelity, re-import the original GLB/GLTF if needed.`);
-                     const placeholderGeo = new THREE.BoxGeometry(1,1,1);
-                     mesh = createMesh(placeholderGeo, "ImportedObject", null,
-                        new THREE.Vector3().fromArray(objData.position),
-                        new THREE.Euler().fromArray(objData.rotation),
-                        new THREE.Vector3().fromArray(objData.scale),
-                        objData.name,
-                        JSON.parse(JSON.stringify(objData.userData))
-                     );
-                } else {
-                    console.error("Cannot determine geometry for object:", objData.name);
-                    return;
-                }
-
-                mesh.visible = objData.visible !== undefined ? objData.visible : true;
-
-                if (objData.material) {
-                    const targetMaterial = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
-                    targetMaterial.color.set(objData.material.color || '#ffffff');
-                    targetMaterial.metalness = objData.material.metalness !== undefined ? objData.material.metalness : 0.3;
-                    targetMaterial.roughness = objData.material.roughness !== undefined ? objData.material.roughness : 0.6;
-                    if (objData.material.emissive) targetMaterial.emissive.set(objData.material.emissive);
-                    if (objData.material.opacity !== undefined) targetMaterial.opacity = objData.material.opacity;
-                    targetMaterial.transparent = objData.material.transparent || false;
-                    targetMaterial.wireframe = objData.material.wireframe || false;
-                    
-                    if (!mesh.userData.material) mesh.userData.material = {};
-                    Object.assign(mesh.userData.material, objData.material);
-
-                    if (objData.material.mapSrc) {
-                        const promise = new Promise((resolve) => {
-                            textureLoader.load(objData.material.mapSrc, (texture) => {
-                                texture.colorSpace = THREE.SRGBColorSpace;
-                                texture.flipY = false;
-                                if (targetMaterial.map) targetMaterial.map.dispose();
-                                targetMaterial.map = texture;
-                                targetMaterial.color.set(0xffffff); 
-                                targetMaterial.needsUpdate = true;
-                                mesh.userData.material.textureSrc = objData.material.mapSrc;
-                                mesh.userData.material.color = "ffffff";
-                                resolve();
-                            }, undefined, (err) => {
-                                 console.error("Error loading texture during project load:", err, objData.material.mapSrc);
-                                 resolve(); 
-                            });
-                        });
-                        loadingPromises.push(promise);
-                    }
-                }
-            });
-            
-            Promise.all(loadingPromises).then(() => {
-                 console.log("Project and all textures loaded.");
-                 if(selectableObjects.length > 0) {
-                    // selectObject(selectableObjects[selectableObjects.length-1]);
-                 } else {
-                    deselectObject();
-                 }
+                // These are now set globally before calling openChatPage
+                // currentChatPartner = partner; 
+                // activeChatId = tempActiveChatId;
+                openChatPage(partner); // partner already contains all necessary info
             });
         }
 
-        function handleImportGLB(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = (e_reader) => {
-                const contents = e_reader.target.result;
-                const loader = new GLTFLoader();
-                
-                loader.parse(contents, '', (gltf) => {
-                    const importedModelRoot = gltf.scene; 
-                    
-                    importedModelRoot.name = ensureUniqueName(file.name.replace(/\.[^/.]+$/, "") || "Imported_Model", selectableObjects);
-                    
-                    importedModelRoot.traverse((child) => {
-                        if (child.isMesh) {
-                            child.castShadow = true;
-                            child.receiveShadow = true;
-                            if (child.material && child.material.map) {
-                                child.material.map.colorSpace = THREE.SRGBColorSpace;
-                                child.material.needsUpdate = true;
-                            }
-                        }
-                    });
-
-                    importedModelRoot.userData = {
-                        geometryType: 'imported_glb',
-                        sourceFile: file.name,
-                    };
-                     if (importedModelRoot.children.length > 0) {
-                        const firstMesh = importedModelRoot.children.find(c => c.isMesh);
-                        if (firstMesh && firstMesh.material) {
-                             const mat = Array.isArray(firstMesh.material) ? firstMesh.material[0] : firstMesh.material;
-                             importedModelRoot.userData.material = {
-                                color: mat.color.getHexString(),
-                                metalness: mat.metalness !== undefined ? mat.metalness : 0.5,
-                                roughness: mat.roughness !== undefined ? mat.roughness : 0.5,
-                                mapSrc: (mat.map && mat.map.image && mat.map.image.src && typeof mat.map.image.src === 'string' && mat.map.image.src.startsWith('data:')) ? mat.map.image.src : null
-                             };
-                        }
-                    }
-
-                    scene.add(importedModelRoot);
-                    selectableObjects.push(importedModelRoot);
-                    selectObject(importedModelRoot);
-
-                    console.log("GLB/GLTF imported successfully:", importedModelRoot);
-
-                }, (error) => {
-                    console.error("Error importing GLB/GLTF:", error);
-                    alert("Error importing GLB/GLTF file.");
-                });
-            };
-            reader.readAsArrayBuffer(file);
-            event.target.value = "";
-        }
-
-        function onWindowResize() {
-            camera.aspect = container.clientWidth / container.clientHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(container.clientWidth, container.clientHeight);
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-            orbitControls.update();
-            renderer.render(scene, camera);
-        }
     </script>
 </body>
 </html>
