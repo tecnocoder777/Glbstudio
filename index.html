@@ -3,671 +3,533 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mera Telegram Jaisa App</title>
+    <title>HostMyWeb - Apna HTML Host Karein</title>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-functions-compat.js"></script>
+
     <style>
-        /* Basic Reset & Global Styles */
-        *, *::before, *::after { box-sizing: border-box; }
-        html { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        /* Basic Styling - Isko 3D UI ke liye enhance karna hoga */
         body {
-            min-height: 100vh; margin: 0;
-            background-color: #17212b; /* Dark background for app pages */
-            color: #fff;
-            display: flex; 
-            flex-direction: column; 
-            overflow: hidden; 
-        }
-
-        /* --- PAGE CONTAINERS --- */
-        .app-page {
-            display: none; 
-            flex-direction: column;
-            height: 100vh; 
-            width: 100%;
-            overflow: hidden; 
-        }
-        .app-page.active {
-            display: flex; 
-        }
-
-        /* --- AUTH SCREEN (MODIFIED) --- */
-        #auth-screen {
-            display: flex; 
-            flex-direction: column;
-            /* justify-content: center; */ /* Removed for stacked forms */
-            align-items: center; /* Center forms horizontally */
-            height: 100vh; 
-            background-color: #0088cc; /* Blue background */
-            color: white; 
-            padding: 20px;
-            overflow-y: auto; /* Allow scrolling if content overflows */
-        }
-        #auth-screen.hidden { display: none !important; }
-
-        .auth-header { /* Optional header for Auth Screen */
-            width: 100%;
-            text-align: center;
-            padding: 10px 0 0px 0; /* Adjusted padding */
-        }
-        .auth-header h1 {
-            margin: 0 0 20px 0; /* Space below header */
-            font-size: 1.8em; 
-            font-weight: 500;
-        }
-
-        #auth-screen #login-form,
-        #auth-screen #signup-form {
-            display: flex; 
-            flex-direction: column;
-            align-items: center; 
-            width: 100%;
-            max-width: 400px; 
-            padding: 0px 20px 20px 20px; /* No top padding, header has bottom margin */
-            margin-bottom: 10px; 
-        }
-        /* #signup-form has no .hidden class in HTML by default */
-
-        #auth-screen h2 {
-            margin-bottom: 20px;
-            font-weight: 500;
-            color: white;
-            text-align: center; /* Center form titles */
-        }
-        #auth-screen input {
-            width: 100%; 
-            padding: 12px 15px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            background-color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f0f2f5; /* Light background */
             color: #333;
-            font-size: 1em;
+            perspective: 1000px; /* For 3D effects */
+            overflow-x: hidden;
         }
-        #auth-screen button {
-            width: 100%; 
-            padding: 12px 25px;
-            background-color: #00629e;
+
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            transform-style: preserve-3d; /* Enable 3D transforms for children */
+        }
+
+        header {
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
             color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+            transform: translateZ(20px); /* Subtle 3D lift */
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        nav {
+            display: flex;
+            justify-content: flex-end;
+            padding: 10px;
+            background: #fff;
+            border-bottom: 1px solid #eee;
+        }
+
+        nav button {
+            margin-left: 10px;
+            padding: 8px 15px;
             border: none;
+            background-color: #6e8efb;
+            color: white;
             border-radius: 5px;
             cursor: pointer;
-            margin-top: 10px;
-            font-size: 1em;
-            font-weight: 500;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
-        #auth-screen button:hover {
-            background-color: #004c7a;
-        }
-        #auth-screen .toggle-form {
-            margin-top: 15px;
-            color: #f0f0f0;
-            text-decoration: underline;
-            cursor: pointer;
-            text-align: center; 
-        }
-        #auth-error {
-            color: #ffd2d2; 
-            margin-top: 10px;
-            text-align: center;
-            min-height: 1.2em;
-            font-weight: 500;
+        nav button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
         }
 
+        .auth-section, .dashboard-section, .create-site-section {
+            display: none; /* Initially hidden */
+            padding: 20px;
+            border: 1px solid #ddd;
+            margin-top: 20px;
+            border-radius: 8px;
+            background: #f9f9f9;
+            transform: translateZ(-10px); /* Push back slightly */
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+        }
 
-        /* --- SHARED PAGE COMPONENTS (for app pages) --- */
-        .page-header {
-            background-color: #2b5278; 
-            color: white;
-            padding: 0 15px;
-            height: 56px; 
-            display: flex;
+        input[type="email"], input[type="password"], input[type="text"], textarea {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        textarea {
+            min-height: 200px;
+            resize: vertical;
+        }
+
+        .hosted-site-card {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .hosted-site-card:hover {
+            transform: scale(1.02) rotateX(5deg) rotateY(-5deg); /* 3D hover effect */
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+        .hosted-site-card a {
+            color: #6e8efb;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #6e8efb;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            display: none; /* Initially hidden */
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Simple Modal for Forms */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
             align-items: center;
-            flex-shrink: 0; 
+            justify-content: center;
         }
-        .page-header .icon-btn { background: none; border: none; color: white; font-size: 1.5em; cursor: pointer; padding: 8px; line-height: 1; }
-        .page-header .title { flex-grow: 1; font-size: 1.2em; font-weight: 500; margin-left: 10px; }
-        
-        .scrollable-content {
-            flex-grow: 1; 
-            overflow-y: auto; 
-            background-color: #212d3b; 
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 10px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.25);
+            transform: scale(0.9);
+            transition: transform 0.3s ease-out;
+        }
+        .modal.show .modal-content {
+            transform: scale(1);
+        }
+        .close-button {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-button:hover, .close-button:focus {
+            color: black;
+            text-decoration: none;
         }
 
-        /* Chat List Item Styling */
-        .chat-list-item { padding: 10px 15px; cursor: pointer; display: flex; align-items: center; position: relative; min-height: 72px; border-bottom: 1px solid #1c2733; }
-        .chat-list-item:hover { background-color: #2a3948; }
-        .chat-list-item .avatar { width: 50px; height: 50px; border-radius: 50%; background-color: #555; margin-right: 12px; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 1.2em; flex-shrink: 0; color: #fff; }
-        .chat-list-item .chat-info { overflow: hidden; flex-grow: 1; padding-right: 70px; }
-        .chat-list-item .chat-info.no-meta { padding-right: 15px; }
-        .chat-list-item .chat-info .chat-name { font-weight: 500; font-size: 1em; color: #e1e3e5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px; }
-        .chat-list-item .chat-info .last-message { font-size: 0.9em; color: #8a99a7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .chat-list-item .chat-meta { position: absolute; top: 12px; right: 15px; text-align: right; font-size: 0.75em; color: #8a99a7; display: flex; flex-direction: column; align-items: flex-end; }
-        .chat-list-item .timestamp { margin-bottom: 5px; }
-        .chat-list-item .unread-badge { background-color: #4d91cc; color: white; font-size: 0.7em; padding: 3px 7px; border-radius: 10px; font-weight: 500; min-width: 20px; text-align: center; }
+        /* Additional 3D UI elements - Placeholder */
+        .button-3d {
+            background-color: #7b4397; /* fallback */
+            background-image: linear-gradient(to bottom, #a777e3, #6e8efb);
+            border: none;
+            color: white;
+            padding: 12px 25px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 8px;
+            box-shadow: 0 5px #5a327e, 0 7px 5px rgba(0,0,0,0.2);
+            transition: all 0.15s ease-in-out;
+            position: relative;
+            top: 0;
+        }
+        .button-3d:hover {
+            background-image: linear-gradient(to bottom, #9666d1, #5d78f9);
+        }
+        .button-3d:active {
+            box-shadow: 0 2px #5a327e, 0 4px 3px rgba(0,0,0,0.2);
+            top: 3px;
+        }
 
-        #new-chat-fab-page { 
-            position: fixed; 
-            bottom: 25px;
-            right: 25px;
-            background-color: #5288c1; color: white; width: 56px; height: 56px;
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            font-size: 24px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); cursor: pointer; z-index: 100; border: none;
-        }
-        #new-chat-fab-page.hidden { display: none !important; }
 
-        /* --- ACTIVE CHAT PAGE --- */
-        .messages-container { 
-            padding: 15px; display: flex; flex-direction: column;
-        }
-        .message { margin-bottom: 8px; padding: 7px 12px; border-radius: 12px; max-width: 70%; word-wrap: break-word; line-height: 1.4; font-size: 0.95em; }
-        .my-message { background-color: #2b5278; align-self: flex-end; margin-left: auto; color: #e5eff8; }
-        .other-message { background-color: #26303c; align-self: flex-start; color: #d5dde3; }
-        .message .sender-name { font-size: 0.85em; color: #6ca9de; margin-bottom: 3px; font-weight: 500; }
-        .my-message .sender-name { display: none; }
-        .message .message-time { font-size: 0.7em; color: #707e8c; text-align: right; margin-top: 4px; }
-        .my-message .message-time { color: #8ab8e0; }
-
-        .chat-input-area-page {
-            display: flex; padding: 8px 12px; background-color: #212d3b; 
-            border-top: 1px solid #0f1a25; flex-shrink: 0; align-items: center;
-            min-height: 50px;
-        }
-        #message-input-page { 
-            flex-grow: 1; padding: 10px 15px; border: none; border-radius: 20px;
-            margin-right: 10px; outline: none; background-color: #17212b;
-            color: #cdd3d8; font-size: 0.95em;
-        }
-        #send-button-page { 
-            background-color: #5288c1; color: white; border: none; border-radius: 50%;
-            cursor: pointer; width: 40px; height: 40px; display: flex;
-            align-items: center; justify-content: center; font-size: 1.2em;
-        }
     </style>
 </head>
 <body>
 
-    <div id="auth-screen"> <!-- Initially visible -->
-        <div class="auth-header">
-            <h1>Mera Telegram Jaisa App</h1>
-        </div>
-        <div id="login-form"> <!-- No hidden class -->
-            <h2>Login</h2>
-            <input type="email" id="login-email" placeholder="Email">
-            <input type="password" id="login-password" placeholder="Password">
-            <button id="login-button">Login</button>
-            <!-- The p.toggle-form elements are now just visual, JS for them is removed -->
-            <p class="toggle-form" data-form="signup-form">Don't have an account? Sign Up</p>
-        </div>
-        <div id="signup-form"> <!-- No hidden class -->
-            <h2>Sign Up</h2>
-            <input type="text" id="signup-display-name" placeholder="Display Name (e.g. Jade)">
-            <input type="email" id="signup-email" placeholder="Email (e.g. jass@gmail.com)">
-            <input type="password" id="signup-password" placeholder="Password">
-            <button id="signup-button">Sign Up</button>
-            <p class="toggle-form" data-form="login-form">Already have an account? Login</p>
-        </div>
-        <p id="auth-error"></p>
-    </div>
-
-    <div id="page-chat-list" class="app-page"> <!-- Initially hidden by .app-page style -->
-        <header class="page-header">
-            <button class="icon-btn" id="main-menu-btn">☰</button>
-            <span class="title">Telegram</span>
-            <button class="icon-btn" id="search-chats-btn">🔍</button>
+    <div class="container">
+        <header>
+            <h1>HostMyWeb</h1>
+            <p>Apna Static HTML Aasani Se Host Karein</p>
         </header>
-        <div class="scrollable-content" id="chat-list-container-page"></div>
-        <button id="new-chat-fab-page" title="New Chat" class="hidden">✎</button>
-    </div>
 
-    <div id="page-contacts-select" class="app-page">
-        <header class="page-header">
-            <button class="icon-btn" id="back-from-contacts-btn">←</button>
-            <span class="title">New Message</span>
-        </header>
-        <div class="scrollable-content" id="contacts-list-container-page"></div>
-    </div>
+        <nav>
+            <span id="user-email-display" style="margin-right: auto; padding: 8px;"></span>
+            <button id="login-nav-btn" class="button-3d">Login</button>
+            <button id="signup-nav-btn" class="button-3d">Signup</button>
+            <button id="dashboard-nav-btn" style="display: none;" class="button-3d">Dashboard</button>
+            <button id="logout-nav-btn" style="display: none;" class="button-3d">Logout</button>
+        </nav>
 
-    <div id="page-active-chat" class="app-page">
-        <header class="page-header">
-            <button class="icon-btn" id="back-from-chat-btn">←</button>
-            <span class="title" id="active-chat-name-page">Chat Name</span>
-            <button class="icon-btn" id="chat-options-btn">⋮</button>
-        </header>
-        <div class="scrollable-content messages-container" id="messages-container-page"></div>
-        <div class="chat-input-area-page">
-            <input type="text" id="message-input-page" placeholder="Type a message...">
-            <button id="send-button-page">➢</button>
+        <div id="app-content">
+            <!-- Initial view for non-logged in users -->
+            <section id="welcome-section" style="text-align: center; padding: 40px;">
+                <h2>HostMyWeb mein Aapka Swagat Hai!</h2>
+                <p>Login ya Signup karein aur apna HTML content host karna shuru karein.</p>
+                <p>Aapko ek unique URL milega aapke har project ke liye!</p>
+            </section>
+
+            <!-- Login/Signup Modals -->
+            <div id="login-modal" class="modal">
+                <div class="modal-content">
+                    <span class="close-button" onclick="closeModal('login-modal')">×</span>
+                    <h3>Login</h3>
+                    <input type="email" id="login-email" placeholder="Email">
+                    <input type="password" id="login-password" placeholder="Password">
+                    <button id="login-btn" class="button-3d">Login</button>
+                    <p id="login-error" style="color: red;"></p>
+                </div>
+            </div>
+
+            <div id="signup-modal" class="modal">
+                <div class="modal-content">
+                    <span class="close-button" onclick="closeModal('signup-modal')">×</span>
+                    <h3>Signup</h3>
+                    <input type="email" id="signup-email" placeholder="Email">
+                    <input type="password" id="signup-password" placeholder="Password">
+                    <button id="signup-btn" class="button-3d">Signup</button>
+                    <p id="signup-error" style="color: red;"></p>
+                </div>
+            </div>
+
+
+            <!-- Dashboard (Logged In Users) -->
+            <section id="dashboard-section" class="dashboard-section">
+                <h2>Aapke Hosted Sites</h2>
+                <div id="hosted-sites-list">
+                    <!-- Hosted sites will be listed here -->
+                </div>
+                <button id="create-new-site-btn" class="button-3d">Naya Site Banayein</button>
+            </section>
+
+            <!-- Create New Site (Logged In Users) -->
+            <section id="create-site-section" class="create-site-section">
+                <h2>Naya Site Host Karein</h2>
+                <label for="site-name">Site ka Naam (URL mein istemal hoga, e.g., my-awesome-project):</label>
+                <input type="text" id="site-name" placeholder="my-project-name (small letters, no spaces)">
+                
+                <label for="html-content">HTML Code Yahan Paste Karein:</label>
+                <textarea id="html-content" placeholder="<html>...</html>"></textarea>
+                
+                <p>YA</p>
+                <label for="html-file-upload">Ek `index.html` File Upload Karein:</label>
+                <input type="file" id="html-file-upload" accept=".html">
+
+                <button id="publish-site-btn" class="button-3d">Publish Site</button>
+                <div id="publish-loader" class="loader"></div>
+                <p id="publish-status"></p>
+            </section>
         </div>
     </div>
-
-    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-database.js"></script>
 
     <script>
+        // IMPORTANT: Replace with your Firebase project's configuration
         const firebaseConfig = {
-            apiKey: "AIzaSyDK5_blHE_dw63DhFBNAKmcRNepFxnYq5E", // YOUR KEY
-            authDomain: "instagram-f0352.firebaseapp.com",
-            projectId: "instagram-f0352",
-            storageBucket: "instagram-f0352.firebasestorage.app",
-            messagingSenderId: "961783441132",
-            appId: "1:961783441132:web:7cfc0dff1f22efa75ee7c9",
-            measurementId: "G-YS3TPDZWGW"
-        };
+  apiKey: "AIzaSyDK5_blHE_dw63DhFBNAKmcRNepFxnYq5E",
+  authDomain: "instagram-f0352.firebaseapp.com",
+  projectId: "instagram-f0352",
+  storageBucket: "instagram-f0352.firebasestorage.app",
+  messagingSenderId: "961783441132",
+  appId: "1:961783441132:web:7cfc0dff1f22efa75ee7c9",
+  measurementId: "G-YS3TPDZWGW"
+};
+
+        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
-        const db = firebase.database();
+        const db = firebase.firestore();
+        const storage = firebase.storage();
+        // const functions = firebase.functions(); // Agar client se function call karna ho
 
-        // DOM Elements - Auth
-        const authScreenEl = document.getElementById('auth-screen');
-        // const loginFormEl = document.getElementById('login-form'); // Not needed for toggling anymore
-        // const signupFormEl = document.getElementById('signup-form'); // Not needed for toggling anymore
-        const authErrorEl = document.getElementById('auth-error');
-        const signupDisplayNameInput = document.getElementById('signup-display-name');
-        const signupEmailInput = document.getElementById('signup-email');
-        const signupPasswordInput = document.getElementById('signup-password');
-        const loginEmailInput = document.getElementById('login-email');
-        const loginPasswordInput = document.getElementById('login-password');
-        // const toggleFormLinks = document.querySelectorAll('.toggle-form'); // Not used for toggling now
+        // DOM Elements
+        const loginNavBtn = document.getElementById('login-nav-btn');
+        const signupNavBtn = document.getElementById('signup-nav-btn');
+        const dashboardNavBtn = document.getElementById('dashboard-nav-btn');
+        const logoutNavBtn = document.getElementById('logout-nav-btn');
+        const userEmailDisplay = document.getElementById('user-email-display');
 
-        // DOM Elements - Pages
-        const pageChatList = document.getElementById('page-chat-list');
-        const pageContactsSelect = document.getElementById('page-contacts-select');
-        const pageActiveChat = document.getElementById('page-active-chat');
+        const loginModal = document.getElementById('login-modal');
+        const signupModal = document.getElementById('signup-modal');
+        const loginBtn = document.getElementById('login-btn');
+        const signupBtn = document.getElementById('signup-btn');
+        const loginError = document.getElementById('login-error');
+        const signupError = document.getElementById('signup-error');
 
-        // DOM Elements - Chat List Page
-        const chatListContainerPage = document.getElementById('chat-list-container-page');
-        const newChatFabPage = document.getElementById('new-chat-fab-page');
-        const mainMenuBtn = document.getElementById('main-menu-btn');
-        const searchChatsBtn = document.getElementById('search-chats-btn');
-
-        // DOM Elements - Contacts Select Page
-        const contactsListContainerPage = document.getElementById('contacts-list-container-page');
-        const backFromContactsBtn = document.getElementById('back-from-contacts-btn');
-
-        // DOM Elements - Active Chat Page
-        const activeChatNamePage = document.getElementById('active-chat-name-page');
-        const messagesContainerPage = document.getElementById('messages-container-page');
-        const messageInputPage = document.getElementById('message-input-page');
-        const sendButtonPage = document.getElementById('send-button-page');
-        const backFromChatBtn = document.getElementById('back-from-chat-btn');
-        const chatOptionsBtn = document.getElementById('chat-options-btn');
-
+        const welcomeSection = document.getElementById('welcome-section');
+        const dashboardSection = document.getElementById('dashboard-section');
+        const createSiteSection = document.getElementById('create-site-section');
+        const createNewSiteBtn = document.getElementById('create-new-site-btn');
+        const publishSiteBtn = document.getElementById('publish-site-btn');
+        const siteNameInput = document.getElementById('site-name');
+        const htmlContentInput = document.getElementById('html-content');
+        const htmlFileUploadInput = document.getElementById('html-file-upload');
+        const hostedSitesList = document.getElementById('hosted-sites-list');
+        const publishLoader = document.getElementById('publish-loader');
+        const publishStatus = document.getElementById('publish-status');
+        
         let currentUser = null;
-        let currentChatPartner = null;
-        let activeChatId = null;
-        let messagesListener = null; // Will store the callback function for messages
-        let currentChatMessagesRef = null; // Will store the Firebase ref for current messages
-        let userChatsListener = null;
 
-        function showPage(pageId) {
-            [pageChatList, pageContactsSelect, pageActiveChat].forEach(page => {
-                page.classList.remove('active');
-            });
-            authScreenEl.classList.add('hidden'); 
-
-            if (pageId === 'auth-screen') {
-                authScreenEl.classList.remove('hidden');
-                // authScreenEl.classList.add('active'); // Not needed as it's not an .app-page
-            } else {
-                const pageToShow = document.getElementById(pageId);
-                if (pageToShow) {
-                    pageToShow.classList.add('active');
-                }
+        // --- UI Management ---
+        function showView(viewId) {
+            welcomeSection.style.display = 'none';
+            dashboardSection.style.display = 'none';
+            createSiteSection.style.display = 'none';
+            if (document.getElementById(viewId)) {
+                document.getElementById(viewId).style.display = 'block';
             }
-            if (pageId === 'page-chat-list' && currentUser) {
-                newChatFabPage.classList.remove('hidden');
-            } else {
-                newChatFabPage.classList.add('hidden');
+        }
+
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'flex'; // Use flex to center content
+                setTimeout(() => modal.classList.add('show'), 10); // For transition
+            }
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('show');
+                setTimeout(() => modal.style.display = 'none', 300); // Match transition duration
             }
         }
         
+        loginNavBtn.onclick = () => openModal('login-modal');
+        signupNavBtn.onclick = () => openModal('signup-modal');
+        dashboardNavBtn.onclick = () => showView('dashboard-section');
+        createNewSiteBtn.onclick = () => showView('create-site-section');
+
+        // --- Authentication ---
         auth.onAuthStateChanged(user => {
+            currentUser = user;
             if (user) {
-                currentUser = { uid: user.uid, email: user.email };
-                db.ref('users/' + user.uid + '/profile/displayName').once('value').then(snapshot => {
-                    currentUser.displayName = snapshot.val() || user.email.split('@')[0];
-                });
-                showPage('page-chat-list');
-                loadUserChats();
+                userEmailDisplay.textContent = `Logged in: ${user.email}`;
+                loginNavBtn.style.display = 'none';
+                signupNavBtn.style.display = 'none';
+                dashboardNavBtn.style.display = 'inline-block';
+                logoutNavBtn.style.display = 'inline-block';
+                closeModal('login-modal');
+                closeModal('signup-modal');
+                showView('dashboard-section');
+                loadHostedSites();
             } else {
-                if (currentChatMessagesRef && messagesListener) {
-                     currentChatMessagesRef.off('child_added', messagesListener);
-                }
-                if (userChatsListener) userChatsListener.off();
-                currentUser = null; currentChatPartner = null; activeChatId = null;
-                messagesListener = null; currentChatMessagesRef = null; userChatsListener = null;
-                
-                showPage('auth-screen');
-                chatListContainerPage.innerHTML = '';
-                contactsListContainerPage.innerHTML = '';
-                messagesContainerPage.innerHTML = '';
-                authErrorEl.textContent = '';
-                // Reset form fields if they exist (check for null if elements are removed)
-                if(document.getElementById('login-form')) document.getElementById('login-form').reset(); 
-                if(document.getElementById('signup-form')) document.getElementById('signup-form').reset();
+                userEmailDisplay.textContent = '';
+                loginNavBtn.style.display = 'inline-block';
+                signupNavBtn.style.display = 'inline-block';
+                dashboardNavBtn.style.display = 'none';
+                logoutNavBtn.style.display = 'none';
+                showView('welcome-section');
+                hostedSitesList.innerHTML = ''; // Clear sites list on logout
             }
         });
-        
-        // Removed toggleFormLinks event listener as forms are always visible on auth screen.
-        
-        document.getElementById('signup-button').addEventListener('click', () => {
-            const email = signupEmailInput.value;
-            const password = signupPasswordInput.value;
-            const displayName = signupDisplayNameInput.value.trim();
-            if (!displayName) { authErrorEl.textContent = "Display Name is required."; return; }
-            authErrorEl.textContent = '';
-            auth.createUserWithEmailAndPassword(email, password)
-                .then(userCredential => {
-                    const userToUpdate = userCredential.user;
-                    return db.ref('users/' + userToUpdate.uid + '/profile').set({
-                        email: userToUpdate.email, displayName: displayName, createdAt: firebase.database.ServerValue.TIMESTAMP
-                    });
-                }).catch(error => authErrorEl.textContent = error.message);
-        });
 
-        document.getElementById('login-button').addEventListener('click', () => {
-            const email = loginEmailInput.value;
-            const password = loginPasswordInput.value;
-            authErrorEl.textContent = '';
+        loginBtn.addEventListener('click', () => {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            loginError.textContent = '';
             auth.signInWithEmailAndPassword(email, password)
-                .catch(error => authErrorEl.textContent = error.message);
+                .catch(error => {
+                    loginError.textContent = error.message;
+                });
         });
 
-        mainMenuBtn.addEventListener('click', () => {
-            if (confirm("Logout?")) { auth.signOut(); }
+        signupBtn.addEventListener('click', () => {
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            signupError.textContent = '';
+            auth.createUserWithEmailAndPassword(email, password)
+                .catch(error => {
+                    signupError.textContent = error.message;
+                });
         });
-        searchChatsBtn.addEventListener('click', () => alert("Search chats - not implemented"));
-        chatOptionsBtn.addEventListener('click', () => alert("Chat options - not implemented"));
 
-        newChatFabPage.addEventListener('click', () => {
-            showPage('page-contacts-select');
-            loadUsersForNewChat();
+        logoutNavBtn.addEventListener('click', () => {
+            auth.signOut();
         });
-        backFromContactsBtn.addEventListener('click', () => showPage('page-chat-list'));
+
+        // --- Site Management ---
+        publishSiteBtn.addEventListener('click', async () => {
+            if (!currentUser) {
+                publishStatus.textContent = 'Pehle login karein.';
+                return;
+            }
+            const siteName = siteNameInput.value.trim().toLowerCase().replace(/\s+/g, '-');
+            let htmlContent = htmlContentInput.value.trim();
+            const file = htmlFileUploadInput.files[0];
+
+            if (!siteName) {
+                publishStatus.textContent = 'Site ka naam zaroori hai.';
+                return;
+            }
+            if (!htmlContent && !file) {
+                publishStatus.textContent = 'HTML code paste karein ya file upload karein.';
+                return;
+            }
+
+            publishLoader.style.display = 'block';
+            publishStatus.textContent = 'Publishing...';
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    htmlContent = e.target.result;
+                    await uploadAndSaveSite(siteName, htmlContent);
+                };
+                reader.readAsText(file);
+            } else {
+                await uploadAndSaveSite(siteName, htmlContent);
+            }
+        });
+
+        async function uploadAndSaveSite(siteName, htmlContent) {
+            try {
+                const siteId = siteName + '-' + Date.now(); // Basic unique ID for Firestore doc
+                const filePath = `user_sites/${currentUser.uid}/${siteId}/index.html`;
+                const fileBlob = new Blob([htmlContent], { type: 'text/html' });
+                
+                const storageRef = storage.ref(filePath);
+                await storageRef.put(fileBlob);
+                const downloadURL = await storageRef.getDownloadURL(); // Not directly used for serving, but good for reference
+
+                // Save metadata to Firestore
+                // IMPORTANT: The `publicPath` should be unique. You might want to check this.
+                // For simplicity, we use siteName, but ideally, it should be a unique slug.
+                // The URL will be like: YOUR_MAIN_HOSTING_URL/s/UNIQUE_PROJECT_ID_FROM_FIRESTORE
+                // OR YOUR_MAIN_HOSTING_URL/u/USERNAME/PROJECT_SLUG
+                // Let's use Firestore document ID as the unique part of the URL
+                const projectRef = await db.collection('projects').add({
+                    userId: currentUser.uid,
+                    name: siteNameInput.value.trim(), // Original name for display
+                    pathSlug: siteName, // User-defined path slug
+                    storagePath: filePath,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    // publicUrl: `YOUR_FUNCTION_URL/serve/${docRef.id}` // This will be generated by the function
+                });
+
+                publishStatus.textContent = `Site published! Aapka site yahan live hoga: ${window.location.origin}/s/${projectRef.id}`; // Placeholder, actual URL depends on Firebase Function and Hosting rewrites
+                publishLoader.style.display = 'none';
+                siteNameInput.value = '';
+                htmlContentInput.value = '';
+                htmlFileUploadInput.value = null;
+                showView('dashboard-section');
+                loadHostedSites();
+
+            } catch (error) {
+                console.error("Error publishing site: ", error);
+                publishStatus.textContent = `Error: ${error.message}`;
+                publishLoader.style.display = 'none';
+            }
+        }
         
-        backFromChatBtn.addEventListener('click', () => {
-            if (currentChatMessagesRef && messagesListener) {
-                 currentChatMessagesRef.off('child_added', messagesListener);
-                 messagesListener = null;
-                 currentChatMessagesRef = null;
-            }
-            activeChatId = null; // Clear active chat ID
-            currentChatPartner = null; // Clear current partner
-            showPage('page-chat-list');
-        });
-
-        sendButtonPage.addEventListener('click', sendMessageToActiveChatPage);
-        messageInputPage.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendMessageToActiveChatPage();
-            }
-        });
-
-        function getChatId(uid1, uid2) { return uid1 < uid2 ? `${uid1}_${uid2}` : `${uid2}_${uid1}`; }
-
-        function loadUserChats() {
-            // ... (Copy the full function from the previous response, it's correct)
+        async function loadHostedSites() {
             if (!currentUser) return;
-            if (userChatsListener) userChatsListener.off(); // Detach old listener if any
+            hostedSitesList.innerHTML = '<div class="loader" style="display:block;"></div>'; // Show loader
 
-            const userChatsRef = db.ref('userChats/' + currentUser.uid).orderByChild('timestamp');
-            userChatsListener = userChatsRef; // Store the ref itself
-
-            userChatsRef.on('value', snapshot => {
-                const chatListItemsPromises = [];
-                if (!snapshot.exists() || snapshot.numChildren() === 0) {
-                    chatListContainerPage.innerHTML = `<p style="padding:20px; text-align:center; color:#8a99a7;">No chats yet. Tap ✎ to start one!</p>`;
+            try {
+                const querySnapshot = await db.collection('projects')
+                                            .where('userId', '==', currentUser.uid)
+                                            .orderBy('createdAt', 'desc')
+                                            .get();
+                
+                hostedSitesList.innerHTML = ''; // Clear previous list or loader
+                if (querySnapshot.empty) {
+                    hostedSitesList.innerHTML = '<p>Aapne abhi tak koi site host nahi ki hai.</p>';
                     return;
                 }
-                snapshot.forEach(childSnapshot => {
-                    const chatData = childSnapshot.val();
-                    const chatPartnerUid = childSnapshot.key;
-                    chatListItemsPromises.push(
-                        db.ref('users/' + chatPartnerUid + '/profile').once('value').then(profileSnap => {
-                            const partnerProfile = profileSnap.val();
-                            if (partnerProfile) {
-                                return {
-                                    partnerUid: chatPartnerUid,
-                                    partnerDisplayName: partnerProfile.displayName || partnerProfile.email.split('@')[0],
-                                    partnerEmail: partnerProfile.email,
-                                    lastMessage: chatData.lastMessage || "...",
-                                    timestamp: chatData.timestamp,
-                                    unreadCount: chatData.unreadCount || 0
-                                };
-                            }
-                            return null;
-                        }).catch(e => { console.warn("Error fetching profile for", chatPartnerUid, e); return null; })
-                    );
+                querySnapshot.forEach(doc => {
+                    const site = doc.data();
+                    const siteId = doc.id; // This is the unique ID for the URL
+                    // The URL structure will be: your-main-platform.web.app/s/SITE_ID
+                    // This SITE_ID is the Firestore document ID.
+                    const siteUrl = `${window.location.origin}/s/${siteId}`; 
+
+                    const card = document.createElement('div');
+                    card.className = 'hosted-site-card';
+                    card.innerHTML = `
+                        <h3>${site.name} (Path: /s/${siteId})</h3>
+                        <p>URL: <a href="${siteUrl}" target="_blank">${siteUrl}</a></p>
+                        <p><small>Created: ${site.createdAt ? new Date(site.createdAt.seconds * 1000).toLocaleString() : 'N/A'}</small></p>
+                        <button onclick="deleteSite('${siteId}', '${site.storagePath}')" class="button-3d" style="background: #e74c3c; box-shadow: 0 5px #c0392b;">Delete</button>
+                    `;
+                    hostedSitesList.appendChild(card);
                 });
-
-                Promise.all(chatListItemsPromises)
-                .then(resolvedChatItems => {
-                    chatListContainerPage.innerHTML = ''; // Clear before rendering
-                    const validItems = resolvedChatItems.filter(item => item !== null);
-                    validItems.sort((a, b) => b.timestamp - a.timestamp); // Newest first
-                    
-                    if (validItems.length === 0) {
-                        // This case might be hit if profiles couldn't be fetched but snapshot had children
-                        chatListContainerPage.innerHTML = `<p style="padding:20px; text-align:center; color:#8a99a7;">No chats found or error loading details.</p>`;
-                    } else { 
-                        validItems.forEach(chatInfo => renderChatListItemPage(chatInfo)); 
-                    }
-                });
-            }, error => {
-                console.error("Error loading user chats:", error);
-                chatListContainerPage.innerHTML = `<p style="padding:20px; text-align:center; color:red;">Error loading chats.</p>`;
-            });
-        }
-
-        function renderChatListItemPage(chatInfo) {
-            // ... (Copy the full function from the previous response)
-            const item = document.createElement('div');
-            item.classList.add('chat-list-item');
-            item.dataset.partnerUid = chatInfo.partnerUid;
-
-            const avatar = document.createElement('div');
-            avatar.classList.add('avatar');
-            avatar.textContent = chatInfo.partnerDisplayName.substring(0,1).toUpperCase();
-            
-            const infoDiv = document.createElement('div');
-            infoDiv.classList.add('chat-info');
-            const nameEl = document.createElement('div');
-            nameEl.classList.add('chat-name');
-            nameEl.textContent = chatInfo.partnerDisplayName;
-            const lastMsgEl = document.createElement('div');
-            lastMsgEl.classList.add('last-message');
-            lastMsgEl.textContent = chatInfo.lastMessage;
-
-            infoDiv.appendChild(nameEl);
-            infoDiv.appendChild(lastMsgEl);
-
-            const metaDiv = document.createElement('div');
-            metaDiv.classList.add('chat-meta');
-            const timeEl = document.createElement('span');
-            timeEl.classList.add('timestamp');
-            timeEl.textContent = chatInfo.timestamp ? new Date(chatInfo.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-            metaDiv.appendChild(timeEl);
-
-            if (chatInfo.unreadCount > 0) {
-                const unreadEl = document.createElement('span');
-                unreadEl.classList.add('unread-badge');
-                unreadEl.textContent = chatInfo.unreadCount > 99 ? "99+" : chatInfo.unreadCount;
-                metaDiv.appendChild(unreadEl);
+            } catch (error) {
+                console.error("Error loading sites: ", error);
+                hostedSitesList.innerHTML = '<p>Sites load karne mein error aaya.</p>';
             }
-            
-            item.appendChild(avatar);
-            item.appendChild(infoDiv);
-            item.appendChild(metaDiv);
-
-            item.addEventListener('click', () => {
-                currentChatPartner = { uid: chatInfo.partnerUid, displayName: chatInfo.partnerDisplayName, email: chatInfo.partnerEmail };
-                if (currentUser && chatInfo.partnerUid) {
-                    db.ref('userChats/' + currentUser.uid + '/' + chatInfo.partnerUid + '/unreadCount').set(0);
-                }
-                openChatPage(currentChatPartner);
-            });
-            chatListContainerPage.appendChild(item);
         }
-        
-        function loadUsersForNewChat() {
-            // ... (Copy the full function from the previous response)
+
+        async function deleteSite(docId, storagePath) {
             if (!currentUser) return;
-            contactsListContainerPage.innerHTML = `<p style="padding:15px; text-align:center; color:#8a99a7;">Loading users...</p>`;
-            db.ref('users').once('value').then(snapshot => {
-                contactsListContainerPage.innerHTML = ''; // Clear loading message
-                if (!snapshot.exists()) { 
-                    contactsListContainerPage.innerHTML = `<p style="padding:15px; text-align:center; color:#8a99a7;">No other users found.</p>`;
-                    return; 
-                }
-                let usersFound = 0;
-                snapshot.forEach(childSnapshot => {
-                    const uid = childSnapshot.key;
-                    const profile = childSnapshot.val().profile;
-                    if (uid !== currentUser.uid && profile) { // Don't list self, ensure profile exists
-                        usersFound++;
-                        renderContactItemPage(profile, uid);
-                    }
-                });
-                if (usersFound === 0) { 
-                    contactsListContainerPage.innerHTML = `<p style="padding:15px; text-align:center; color:#8a99a7;">No other users to chat with.</p>`;
-                }
-            }).catch(error => {
-                console.error("Error loading users for new chat:", error);
-                contactsListContainerPage.innerHTML = `<p style="padding:15px; text-align:center; color:red;">Error loading users.</p>`;
-            });
-        }
+            if (!confirm("Kya aap वाकई is site ko delete karna chahte hain?")) return;
 
-        function renderContactItemPage(profile, uid) {
-            // ... (Copy the full function from the previous response)
-            const item = document.createElement('div');
-            item.classList.add('chat-list-item');
-            
-            const avatar = document.createElement('div');
-            avatar.classList.add('avatar');
-            avatar.textContent = (profile.displayName || profile.email.split('@')[0]).substring(0,1).toUpperCase();
+            try {
+                // Delete Firestore document
+                await db.collection('projects').doc(docId).delete();
+                
+                // Delete file from Storage
+                const storageRef = storage.ref(storagePath);
+                await storageRef.delete();
 
-            const infoDiv = document.createElement('div');
-            infoDiv.classList.add('chat-info');
-            infoDiv.classList.add('no-meta'); 
-            
-            const nameEl = document.createElement('div');
-            nameEl.classList.add('chat-name');
-            nameEl.textContent = profile.displayName || profile.email.split('@')[0];
-            
-            const emailEl = document.createElement('div'); 
-            emailEl.classList.add('last-message');
-            emailEl.textContent = profile.email;
-            
-            infoDiv.appendChild(nameEl);
-            infoDiv.appendChild(emailEl);
-            item.appendChild(avatar);
-            item.appendChild(infoDiv);
-
-            item.addEventListener('click', () => {
-                const targetUser = { uid: uid, displayName: profile.displayName || profile.email.split('@')[0], email: profile.email };
-                startNewChatWithUserAndGoToChatPage(targetUser);
-            });
-            contactsListContainerPage.appendChild(item);
-        }
-
-        function openChatPage(partner) {
-            // ... (Copy the full function from the previous response, ensure listener detachment is correct)
-            if (!currentUser || !partner) return; // Added a check for partner
-            
-            // Detach listener for the PREVIOUS chat if it exists
-            if (currentChatMessagesRef && messagesListener) {
-                 currentChatMessagesRef.off('child_added', messagesListener);
-            }
-
-            activeChatId = getChatId(currentUser.uid, partner.uid);
-            currentChatPartner = partner;
-
-            activeChatNamePage.textContent = partner.displayName;
-            messagesContainerPage.innerHTML = ''; // Clear previous messages
-
-            showPage('page-active-chat');
-
-            currentChatMessagesRef = db.ref('chats/' + activeChatId + '/messages').orderByChild('timestamp').limitToLast(50);
-            
-            const messageCallback = snapshot => { // Define callback locally
-                displayMessagePage(snapshot.val());
-            };
-            messagesListener = messageCallback; // Store this specific callback
-            currentChatMessagesRef.on('child_added', messagesListener); // Attach with this specific callback
-        }
-        
-        function displayMessagePage(message) {
-            // ... (Copy the full function from the previous response)
-            const msgDiv = document.createElement('div');
-            msgDiv.classList.add('message');
-            const senderNameSpan = document.createElement('div');
-            senderNameSpan.classList.add('sender-name');
-            const messageTextSpan = document.createElement('div');
-            messageTextSpan.classList.add('message-text');
-            messageTextSpan.textContent = message.text; // Ensure message.text exists
-            const timeSpan = document.createElement('div');
-            timeSpan.classList.add('message-time');
-            timeSpan.textContent = message.timestamp ? new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'sending...';
-
-            if (currentUser && message.senderId === currentUser.uid) {
-                msgDiv.classList.add('my-message');
-            } else {
-                msgDiv.classList.add('other-message');
-                senderNameSpan.textContent = message.senderDisplayName || (message.senderEmail ? message.senderEmail.split('@')[0] : 'User');
-                msgDiv.appendChild(senderNameSpan);
-            }
-            msgDiv.appendChild(messageTextSpan);
-            msgDiv.appendChild(timeSpan);
-            messagesContainerPage.appendChild(msgDiv);
-            if(messagesContainerPage.scrollHeight > messagesContainerPage.clientHeight) {
-                 messagesContainerPage.scrollTop = messagesContainerPage.scrollHeight;
+                alert("Site successfully deleted!");
+                loadHostedSites(); // Refresh the list
+            } catch (error) {
+                console.error("Error deleting site: ", error);
+                alert("Site delete karne mein error: " + error.message);
             }
         }
 
-        function sendMessageToActiveChatPage() {
-            // ... (Copy the full function from the previous response)
-            const text = messageInputPage.value.trim();
-            if (!text || !currentUser || !currentChatPartner || !activeChatId) return;
-            const messageData = {
-                text: text, senderId: currentUser.uid, senderEmail: currentUser.email,
-                senderDisplayName: currentUser.displayName, receiverId: currentChatPartner.uid, 
-                timestamp: firebase.database.ServerValue.TIMESTAMP
-            };
-            db.ref('chats/' + activeChatId + '/messages').push(messageData);
-            const membersUpdate = {};
-            membersUpdate[currentUser.uid] = true; membersUpdate[currentChatPartner.uid] = true;
-            db.ref('chats/' + activeChatId + '/members').update(membersUpdate);
-            
-            const chatSummary = {
-                lastMessage: text, timestamp: firebase.database.ServerValue.TIMESTAMP,
-            };
-            db.ref('userChats/' + currentUser.uid + '/' + currentChatPartner.uid).update({...chatSummary, unreadCount: 0 });
-            const partnerChatRef = db.ref('userChats/' + currentChatPartner.uid + '/' + currentUser.uid);
-            partnerChatRef.update(chatSummary); 
-            partnerChatRef.child('unreadCount').set(firebase.database.ServerValue.increment(1)); 
 
-            messageInputPage.value = '';
-        }
-
-        function startNewChatWithUserAndGoToChatPage(partner) {
-            // ... (Copy the full function from the previous response)
-            if (!currentUser || !partner ) return; // Added check for partner
-            const tempActiveChatId = getChatId(currentUser.uid, partner.uid);
-            
-            const userChatRefCurrentUser = db.ref('userChats/' + currentUser.uid + '/' + partner.uid);
-            userChatRefCurrentUser.once('value', snapshot => {
-                if (!snapshot.exists()) {
-                    const chatSummary = { lastMessage: "Chat started", timestamp: firebase.database.ServerValue.TIMESTAMP, unreadCount: 0 };
-                    db.ref('userChats/' + currentUser.uid + '/' + partner.uid).set(chatSummary);
-                    db.ref('userChats/' + partner.uid + '/' + currentUser.uid).set({...chatSummary, unreadCount: 0 });
-                }
-                // These are now set globally before calling openChatPage
-                // currentChatPartner = partner; 
-                // activeChatId = tempActiveChatId;
-                openChatPage(partner); // partner already contains all necessary info
-            });
-        }
+        // Initial UI setup
+        showView('welcome-section'); // Show welcome section by default
 
     </script>
 </body>
